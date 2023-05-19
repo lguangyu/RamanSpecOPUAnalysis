@@ -5,7 +5,7 @@ spectroscopy data
 
 # Dependencies
 
-This library requires `python&gt;=3.6`; below packages are also required:
+This library requires `python>=3.6`; below packages are also required:
 
 * numpy, scipy, scikit-learn
 * matplotlib
@@ -13,3 +13,14 @@ This library requires `python&gt;=3.6`; below packages are also required:
 
 [1]: the original repo contains a bug laplacian score; please use this version
 (https://github.com/lguangyu/scikit-feature.git) with my fixing commit instead.
+
+
+# Installation
+
+The installation is as easy as a single-line command:
+
+```
+pip install "opu-analysis-lib @ git+https://github.com/lguangyu/RamanSpecOPUAnalysis.git"
+```
+
+which will handle all the dependencies all together.
