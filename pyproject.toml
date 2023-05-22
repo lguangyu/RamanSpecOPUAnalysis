@@ -31,6 +31,7 @@ dynamic = [
 [project.scripts]
 opu_analysis = "opu_analysis_lib:OPUAnalysis.cli_main"
 opu_transform_labspec_txt = "opu_analysis_lib:SpecFromLabspecTxt.cli_main"
+opu_spectra_preview = "opu_analysis_lib:SpecPreview.cli_main"
 
 [tool.setuptools.packages.find]
 where = ["."]

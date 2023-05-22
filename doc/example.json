@@ -1,0 +1,20 @@
+[
+	{
+		"name": "MOCK_0",
+		"color": "#66a61e",
+		"file": "example.assets/data/mock_00.tsv"
+	},
+	{
+		"name": "MOCK_1",
+		"color": "#e6ab02",
+		"file": "example.assets/data/mock_01.tsv"
+	},
+	{
+		"name": "MOCK_2",
+		"color": "#e41a1c",
+		"file": [
+			"example.assets/data/mock_02-1.tsv",
+			"example.assets/data/mock_02-2.tsv"
+		]
+	}
+]
