@@ -87,7 +87,7 @@ class OPUAnalysis(AnalysisFeatureScoreRoutine, AnalysisAbundanceRoutine,
 		ag.add_argument("--abund-stackbar-plot", type=str,
 			metavar="png",
 			help="if set, plot abundance stackbar to this image file [no]")
-		ap.add_argument("--abund-biplot-method", type=str,
+		ag.add_argument("--abund-biplot-method", type=str,
 			default=cls.biplot_meth_reg.default_key,
 			choices=cls.biplot_meth_reg.list_keys(),
 			help="biplot method [%s]" % cls.biplot_meth_reg.default_key)

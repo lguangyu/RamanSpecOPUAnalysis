@@ -28,13 +28,29 @@ which will handle dependencies all together.
 
 # Basic Usage
 
-The library can be used both in CLI, Jupyter notebook or with another python
-library. To use in CLI as a standalone script, run below command after a
-successful installation:
+## Command-line
 
+The library can be used both in CLI, Jupyter notebook or with another python
+library. The example below shows the usage in CLI as a standalone script:
+
+```bash
+cd doc # this is where the example is
+opu_analysis example.json \
+	-b 5.0 -L 400 -H 1800 -N l2 \
+	--metric cosine \
+	--cutoff-threshold 0.7 \
+	--opu-min-size 0.05 \
+	--opu-labels example.json.opu_labels.txt \
+	--opu-collection-prefix example.json.opu_collection \
+	--opu-hca-plot example.json.hca.png \
+	--abund-stackbar-plot example.json.opu_abund.png \
+	--abund-biplot example.json.opu_pca.png \
+	--feature-rank-method fisher_score \
+	--feature-rank-table example.json.opu_feature_rank.tsv \
+	--feature-rank-plot example.json.opu_feature_rank.png
 ```
-opu_analysis -h
-```
+
+## Jupyter notebook
 
 To use in Jupyter notebook/as a library to integrate with other analysis, simply
 do:
