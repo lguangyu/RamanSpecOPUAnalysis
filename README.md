@@ -43,6 +43,8 @@ opu_analysis example.json \
 	--opu-labels example.json.opu_labels.txt \
 	--opu-collection-prefix example.json.opu_collection \
 	--opu-hca-plot example.json.hca.png \
+	--abund-table example.json.opu_abund.tsv \
+	--abund-alpha-diversity example.json.opu_alpha_diversity.tsv \
 	--abund-stackbar-plot example.json.opu_abund.png \
 	--abund-biplot example.json.opu_pca.png \
 	--feature-rank-method fisher_score \

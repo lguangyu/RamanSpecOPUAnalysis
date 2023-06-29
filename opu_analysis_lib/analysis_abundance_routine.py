@@ -22,6 +22,58 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 	biplot_meth_reg = registry.get("dim_red_visualize")
 
 	@util.with_check_data_avail(check_data_attr="hca", dep_method="run_hca")
+	def save_opu_abund_table(self, f, *, delimiter: str = "\t"):
+		if not f:
+			return
+		# calculating biosample opu stats
+		biosample_stats = self.__get_biosample_opu_stats()
+		hca_label_unique = [i for i in self.remapped_hca_label if i is not None]
+
+		with util.get_fp(f, "w") as fp:
+			# header line
+			labels = ["other minor" if l is None else ("OPU_%02d" % l)
+				for l in self.remapped_hca_label_unique]
+			line = delimiter.join([""] + labels)
+			print(line, file=fp)
+			# for each sample, write a line
+			for s in biosample_stats:
+				abunds = [str(s["opu_abunds"].get(l, 0))
+					for l in self.remapped_hca_label_unique]
+				line = delimiter.join([s["name"]] + abunds)
+				print(line, file=fp)
+		return
+
+	@staticmethod
+	def shannon_index(x: numpy.ndarray):
+		x = numpy.asarray(x, dtype=float)
+		if x.ndim >= 2:
+			raise ValueError("the input can only be 1-dim")
+		x = x / x.sum()
+		# replace the 0s in x with 1; this will not impact the result since
+		# ln(1) = 0; when x = 0, we want x * ln(x) be 0 anyway
+		x[x == 0] = 1
+		si = abs(-(x * numpy.log(x)).sum())  # abs turns -0.0 to 0.0
+		return si
+
+	@util.with_check_data_avail(check_data_attr="hca", dep_method="run_hca")
+	def save_opu_alpha_diversity(self, f, *, delimiter="\t"):
+		if not f:
+			return
+
+		# calculate alpha diversity
+		si_n_minor = self.__calculate_shannon_index(with_minor=False)
+		si_w_minor = self.__calculate_shannon_index(with_minor=True)
+		# save file
+		with util.get_fp(f, "w") as fp:
+			# header line
+			print(delimiter.join(["", "shannon (OPUs)", "shannon (with minor)"]
+				), file=fp)
+			# each line for a biosample
+			for s, i, j in zip(self.biosample, si_n_minor, si_w_minor):
+				print(delimiter.join([s, str(i), str(j)]), file=fp)
+		return
+
+	@util.with_check_data_avail(check_data_attr="hca", dep_method="run_hca")
 	def plot_opu_abundance_stackbar(self, *, plot_to="show", dpi=300):
 		if plot_to is None:
 			return
@@ -30,7 +82,7 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 		n_biosample = len(biosample_stats)
 
 		# create layout
-		layout = self.__stackbar_create_layout()
+		layout = self.__stackbar_create_layout(n_biosample)
 		figure = layout["figure"]
 		figure.set_dpi(dpi)
 
@@ -83,6 +135,9 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 	def plot_opu_abundance_biplot(self, *, method=biplot_meth_reg.default_key,
 			plot_to="show", dpi=300):
 		if plot_to is None:
+			return
+		if self.n_biosample == 1:
+			util.log("biplot skipped since only one biosamples available")
 			return
 
 		# calculating biosample opu stats
@@ -137,8 +192,10 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 				verticalalignment="bottom" if xy[1] >= 0 else "top")
 
 		# misc
-		ax.axvline(0, linestyle="--", linewidth=1.0, color="#808080", zorder=1)
-		ax.axhline(0, linestyle="--", linewidth=1.0, color="#808080", zorder=1)
+		ax.axvline(0, linestyle="--", linewidth=1.0,
+		           color="#808080", zorder=1)
+		ax.axhline(0, linestyle="--", linewidth=1.0,
+		           color="#808080", zorder=1)
 		coord_max = biplot_meth.sample_points_for_plot.max() * 1.1
 		ax.set_xlim(-coord_max, coord_max)
 		ax.set_ylim(-coord_max, coord_max)
@@ -157,7 +214,22 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 			ret = None
 		return ret
 
-	def __get_biosample_opu_stats(self) -> list:
+	def __calculate_shannon_index(self, with_minor: bool):
+		count_stats = self.count_biosample_hca_labels()
+		ret = list()
+		for s in self.biosample_unique:
+			if with_minor:
+				# if with_minor, use all counts
+				counts = list(count_stats[s].values())
+			else:
+				# if not with_minor, ignore minor cluster counts
+				counts = [c for l, c in count_stats[s].items()
+					if l in self.hca_label_remap
+				]
+			ret.append(self.shannon_index(counts))
+		return ret
+
+	def __get_biosample_opu_stats(self, minor_policy="grouped") -> list:
 		"""
 		biosample stats based on self.biosample, self.biosample_color, and
 		self.remapped_hca_label;
@@ -169,29 +241,40 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 		n_spectra: number of spectra in that biosample
 		color: color of that biosample
 		opu_counts: spectra counts in each opu, as in remapped opu labels
-		"""
-		stats = collections.defaultdict(
-			lambda: dict(n_spectra=0, color=None,
-				opu_counts=collections.Counter())
-		)
-		# go over the each biosample and biosample_color
-		for s, c, l in zip(self.biosample, self.biosample_color,
-				self.remapped_hca_label):
-			st = stats[s]
-			st["name"] = s
-			st["n_spectra"] += 1
-			st["color"] = c
-			st["opu_counts"][l] += 1
-		# calculate opu abundnaces
-		for st in stats.values():
-			st["opu_abunds"] = {
-				l: c / st["n_spectra"] for l, c in st["opu_counts"].items()
-			}
-		# return a list with the order we want
-		self.biosample_opu_stats = [stats[i] for i in self.biosample_unique]
-		return self.biosample_opu_stats
 
-	def __stackbar_create_layout(self):
+		the argument minor_policy determins how to report minor clusters (those
+		below the min_opu_size threshold), accepted values are:
+		grouped: grouped into a same label 'None' (default)
+		hidden: removed from stats
+		"""
+		if minor_policy not in {"grouped", "hidden"}:
+			raise ValueError("argument minor_policy will only accept value "
+				"'grouped' or 'hidden', got '%s'" % minor_policy)
+
+		ret = list()
+		count_stats = self.count_biosample_hca_labels()
+		for s in self.biosample_unique:
+			# remap the labels
+			opu_counts = collections.Counter()
+			for label, count in count_stats[s].items():
+				remapped_label = self.hca_label_remap.get(label, None)
+				if (remapped_label is not None) or (minor_policy != "hidden"):
+					opu_counts[remapped_label] += count
+			n_spectra = opu_counts.total()
+			opu_abunds = {l: c / n_spectra for l, c in opu_counts.items()}
+			#
+			st = dict(
+				name=s,
+				color=self.biosample_color_dict[s],
+				n_spectra=n_spectra,
+				opu_counts=opu_counts,
+				opu_abunds=opu_abunds,
+			)
+			#
+			ret.append(st)
+		return ret
+
+	def __stackbar_create_layout(self, n_biosample):
 		lc = mpllayout.LayoutCreator(
 			left_margin=0.7,
 			right_margin=1.5,
@@ -201,7 +284,7 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 
 		axes = lc.add_frame("axes")
 		axes.set_anchor("bottomleft")
-		axes.set_size(0.2 * len(self.biosample_opu_stats), 3.0)
+		axes.set_size(0.2 * n_biosample, 3.0)
 
 		# create layout
 		layout = lc.create_figure_layout()

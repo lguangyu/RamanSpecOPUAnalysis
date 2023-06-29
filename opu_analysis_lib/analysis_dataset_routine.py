@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import collections
 import numpy
 
 # custom lib
@@ -20,6 +21,8 @@ class AnalysisDatasetRoutine(object):
 		# __init__, otherwise attribute error will occur
 		self.biosample = biosample
 		self.biosample_color = biosample_color
+		self.biosample_color_dict = dict(
+			zip(self.biosample, self.biosample_color))
 		return
 
 	@property
@@ -58,6 +61,10 @@ class AnalysisDatasetRoutine(object):
 		return self._biosample_unique
 
 	@property
+	def n_biosample(self) -> int:
+		return len(self._biosample_unique)
+
+	@property
 	def biosample_color(self):
 		"""
 		set/get biosample color information corresponding to the spectra in
@@ -83,6 +90,11 @@ class AnalysisDatasetRoutine(object):
 				"a length of dataset.n_spectra")
 		self._biosample_color = value
 		return
+
+	@property
+	def biosample_size(self) -> collections.Counter:
+		# return the sizes of each biosample as a counter
+		return collections.Counter(self.biosample)
 
 	@classmethod
 	def from_config(cls, cfg: list, *, reconcile_param=None, **kw):

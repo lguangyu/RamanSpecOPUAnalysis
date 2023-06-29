@@ -52,7 +52,7 @@ class Fraction(float):
 		return new
 
 
-def get_fp(f, *ka, factory=open, **kw):
+def get_fp(f, *ka, factory=open, **kw) -> io.IOBase:
 	"""
 	wrapper of file handle open function (default: builtin.open) to make it safe
 	to call upon already-opened file handle as the first argument;
@@ -86,7 +86,7 @@ class CyclicIndexedList(list):
 		return super().__getitem__(index % len(self))
 
 
-def drop_replicate(seq):
+def drop_replicate(seq) -> list:
 	"""
 	remove replicate in iterable seq while preseveing the original order by
 	encountering
@@ -111,3 +111,11 @@ def with_check_data_avail(*, check_data_attr: str, dep_method: str):
 			return func(self, *ka, **kw)
 		return wrapper
 	return decorator
+
+
+def log(msg: str, *, fp=sys.stderr) -> None:
+	"""
+	print an warning message, by default to stderr
+	"""
+	print(msg, file=fp)
+	return

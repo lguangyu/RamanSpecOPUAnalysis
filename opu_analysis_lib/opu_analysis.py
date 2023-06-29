@@ -84,6 +84,12 @@ class OPUAnalysis(AnalysisFeatureScoreRoutine, AnalysisAbundanceRoutine,
 				"image file [no]")
 
 		ag = ap.add_argument_group("abundance analysis")
+		ag.add_argument("--abund-table", type=str,
+			metavar="txt",
+			help="if set, output abundances of OPUs to this file [no]")
+		ag.add_argument("--abund-alpha-diversity", type=str,
+			metavar="txt",
+			help="if set, output OPU alpha diversity to this file [no]")
 		ag.add_argument("--abund-stackbar-plot", type=str,
 			metavar="png",
 			help="if set, plot abundance stackbar to this image file [no]")
@@ -141,6 +147,10 @@ class OPUAnalysis(AnalysisFeatureScoreRoutine, AnalysisAbundanceRoutine,
 		opu_anal.plot_opu_hca(plot_to=args.opu_hca_plot, dpi=args.dpi)
 
 		# run opu abundance analysis and plot
+		opu_anal.save_opu_abund_table(args.abund_table,
+			delimiter=args.delimiter)
+		opu_anal.save_opu_alpha_diversity(args.abund_alpha_diversity,
+			delimiter=args.delimiter)
 		opu_anal.plot_opu_abundance_stackbar(plot_to=args.abund_stackbar_plot,
 			dpi=args.dpi)
 		opu_anal.plot_opu_abundance_biplot(plot_to=args.abund_biplot,
