@@ -25,6 +25,12 @@ pip install "opu-analysis-lib @ git+https://github.com/lguangyu/RamanSpecOPUAnal
 
 which will handle dependencies all together.
 
+Alternatively, in case no reinstalltion of the dependencies is wanted, run following:
+
+```
+pip install --no-deps "opu-analysis-lib @ git+https://github.com/lguangyu/RamanSpecOPUAnalysis.git"
+```
+
 
 # Basic Usage
 
