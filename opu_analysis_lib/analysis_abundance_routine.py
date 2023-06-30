@@ -22,7 +22,7 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 	biplot_meth_reg = registry.get("dim_red_visualize")
 
 	@util.with_check_data_avail(check_data_attr="hca", dep_method="run_hca")
-	def save_opu_abund_table(self, f, *, delimiter: str = "\t"):
+	def save_opu_abundance_table(self, f, *, delimiter: str = "\t"):
 		if not f:
 			return
 		# calculating biosample opu stats

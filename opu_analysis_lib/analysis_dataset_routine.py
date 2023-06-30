@@ -116,9 +116,11 @@ class AnalysisDatasetRoutine(object):
 					name=c["name"], **reconcile_param
 				))
 			elif isinstance(c["file"], list):
+				# need to set the default with_spectra_names and merge it into
+				# the reconcile_param to avoid redundant assignment
 				dataset_list.extend([SpectraDataset.from_file(f, name=c["name"],
-					with_spectra_names=f, **reconcile_param
-				) for f in c["file"]])
+					**reconcile_param) for f in c["file"]]
+				)
 			else:
 				raise ValueError("'file' field of the dataset config json must "
 					"be str or list, got '%s'" % type(c["file"]).__name__)

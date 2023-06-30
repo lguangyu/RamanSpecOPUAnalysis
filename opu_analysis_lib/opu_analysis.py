@@ -147,7 +147,7 @@ class OPUAnalysis(AnalysisFeatureScoreRoutine, AnalysisAbundanceRoutine,
 		opu_anal.plot_opu_hca(plot_to=args.opu_hca_plot, dpi=args.dpi)
 
 		# run opu abundance analysis and plot
-		opu_anal.save_opu_abund_table(args.abund_table,
+		opu_anal.save_opu_abundance_table(args.abund_table,
 			delimiter=args.delimiter)
 		opu_anal.save_opu_alpha_diversity(args.abund_alpha_diversity,
 			delimiter=args.delimiter)

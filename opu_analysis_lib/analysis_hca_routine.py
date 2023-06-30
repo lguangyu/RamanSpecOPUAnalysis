@@ -10,6 +10,7 @@ import matplotlib.colors
 import matplotlib.patches
 import matplotlib.pyplot
 import numpy
+import os
 import scipy.cluster
 
 # custom lib
@@ -138,10 +139,16 @@ class AnalysisHCARoutine(AnalysisDatasetRoutine):
 			with_spectra_names=True):
 		if not prefix:
 			return
+		# if prefix is a directory alike, omitting the leading '.'
+		if prefix.endswith(os.path.sep):
+			fn_pattern = "OPU_%02u.txt"
+		else:
+			fn_pattern = ".OPU_%02u.txt"
+		# create one file for each opu
 		for label in self.remapped_hca_label_unique:
 			if label is not None:
 				mask = numpy.equal(self.remapped_hca_label, label)
-				file_name = prefix + (".OPU_%02u.txt" % label)
+				file_name = prefix + (fn_pattern % label)
 				self.dataset.get_sub_dataset(mask).save_file(file_name,
 					delimiter=delimiter, with_spectra_names=with_spectra_names
 				)
