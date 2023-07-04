@@ -11,7 +11,16 @@ from .spectra_dataset import SpectraDataset
 class SpecFromLabspecTxt(object):
 	@classmethod
 	def cli_get_args(cls, argv_override=None):
-		ap = argparse.ArgumentParser()
+		ap = argparse.ArgumentParser(description="discover LabSpec txt dumps in"
+			" <datadir> and combine them into a single tabular format file. "
+			"LabSpec txt dump is in a 2-column tab-delimited tabular format. "
+			"Its first column is wavenumber and the second is intensity. The "
+			"format after transformation is a single-piece tabular format, and "
+			"the first row is wavenumber, the rest rows are intensities. NOTE: "
+			"LabSpec txt dumps from different runs/settings can have different "
+			"wavenumbers, in which case the --bin-size/-b option is required to"
+			" force aligning the wavenumbers."
+		)
 		ap.add_argument("datadir", type=str,
 			help="input directory to scan LabSpec txt dumps")
 		ap.add_argument("--extension", "-x", type=str, default=".txt",
