@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import collections
 import numpy
 
 # custom lib
+from . import future
 from . import util
 from .spectra_dataset import SpectraDataset
 
@@ -92,9 +92,9 @@ class AnalysisDatasetRoutine(object):
 		return
 
 	@property
-	def biosample_size(self) -> collections.Counter:
+	def biosample_size(self) -> future.Counter:
 		# return the sizes of each biosample as a counter
-		return collections.Counter(self.biosample)
+		return future.Counter(self.biosample)
 
 	@classmethod
 	def from_config(cls, cfg: list, *, reconcile_param=None, **kw):

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import collections
-
 import matplotlib
 import matplotlib.pyplot
 import numpy
@@ -9,7 +7,9 @@ import numpy
 # custom lib
 import mpllayout
 
-from . import registry, util
+from . import future
+from . import registry
+from . import util
 from .analysis_hca_routine import AnalysisHCARoutine
 
 
@@ -255,7 +255,7 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 		count_stats = self.count_biosample_hca_labels()
 		for s in self.biosample_unique:
 			# remap the labels
-			opu_counts = collections.Counter()
+			opu_counts = future.Counter()
 			for label, count in count_stats[s].items():
 				remapped_label = self.hca_label_remap.get(label, None)
 				if (remapped_label is not None) or (minor_policy != "hidden"):
