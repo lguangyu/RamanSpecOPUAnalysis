@@ -133,7 +133,7 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 
 	@util.with_check_data_avail(check_data_attr="hca", dep_method="run_hca")
 	def plot_opu_abundance_biplot(self, *, method=biplot_meth_reg.default_key,
-			plot_to="show", dpi=300):
+			plot_to="show", label_fontsize=8, dpi=300):
 		if plot_to is None:
 			return
 		if self.n_biosample == 1:
@@ -168,7 +168,7 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 		ax.scatter(*sample_xy, marker="o", s=40, edgecolor="#4040ff",
 			linewidth=1.0, facecolor="#ffffff40", zorder=1)
 		for xy, s in zip(sample_xy.T, self.biosample_unique):
-			ax.text(*xy, s, fontsize=6, zorder=3,
+			ax.text(*xy, s, fontsize=label_fontsize, zorder=3,
 				rotation=self.__perp_text_rotation(*xy), rotation_mode="anchor",
 				horizontalalignment="center",
 				verticalalignment="bottom" if xy[1] >= 0 else "top")
@@ -186,16 +186,17 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 				),
 				zorder=2,
 			)
-			ax.text(*xy, "OPU_%02u" % l, fontsize=6, color="#ff4040", zorder=3,
+			ax.text(*xy, "OPU_%02u" % l, fontsize=label_fontsize,
+				color="#ff4040", zorder=3,
 				rotation=self.__perp_text_rotation(*xy), rotation_mode="anchor",
 				horizontalalignment="center",
-				verticalalignment="bottom" if xy[1] >= 0 else "top")
+				verticalalignment=("bottom" if xy[1] >= 0 else "top"))
 
 		# misc
 		ax.axvline(0, linestyle="--", linewidth=1.0,
-		           color="#808080", zorder=1)
+			color="#808080", zorder=1)
 		ax.axhline(0, linestyle="--", linewidth=1.0,
-		           color="#808080", zorder=1)
+			color="#808080", zorder=1)
 		coord_max = biplot_meth.sample_points_for_plot.max() * 1.1
 		ax.set_xlim(-coord_max, coord_max)
 		ax.set_ylim(-coord_max, coord_max)

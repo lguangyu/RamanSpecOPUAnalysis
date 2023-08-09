@@ -100,6 +100,9 @@ class OPUAnalysis(AnalysisFeatureScoreRoutine, AnalysisAbundanceRoutine,
 		ag.add_argument("--abund-biplot", type=str,
 			metavar="png",
 			help="if set, plot abundance biplot to this image file [no]")
+		ag.add_argument("--abund-biplot-label-fontsize", type=util.PosInt,
+			metavar="int", default=8,
+			help="the font size of biplot labels [8]")
 
 		ag = ap.add_argument_group("feature score analysis")
 		ag.add_argument("--feature-rank-method", "-R", type=str,
@@ -154,7 +157,8 @@ class OPUAnalysis(AnalysisFeatureScoreRoutine, AnalysisAbundanceRoutine,
 		opu_anal.plot_opu_abundance_stackbar(plot_to=args.abund_stackbar_plot,
 			dpi=args.dpi)
 		opu_anal.plot_opu_abundance_biplot(plot_to=args.abund_biplot,
-			method=args.abund_biplot_method, dpi=args.dpi)
+			method=args.abund_biplot_method, dpi=args.dpi,
+			label_fontsize=args.abund_biplot_label_fontsize)
 
 		# run feature ranking analysis and save results
 		opu_anal.rank_features(args.feature_rank_method)
