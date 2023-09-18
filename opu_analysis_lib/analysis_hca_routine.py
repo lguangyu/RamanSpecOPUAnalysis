@@ -28,6 +28,11 @@ class AnalysisHCARoutine(AnalysisDatasetRoutine):
 	metric_reg = registry.get("cluster_metric")
 	cutoff_opt_reg = registry.get("hca_cutoff_optimizer")
 
+	def __init__(self, *ka, opu_colors: typing.Optional[list] = None, **kw):
+		super().__init__(*ka, **kw)
+		self.opu_colors = opu_colors
+		return
+
 	class NoOPUError(RuntimeError):
 		pass
 
@@ -205,15 +210,18 @@ class AnalysisHCARoutine(AnalysisDatasetRoutine):
 		return ret
 
 	@property
-	def clusters_colors(self) -> util.CyclicIndexedList:
-		# get preliminary colors by internal colormaps
-		prelim = matplotlib.cm.get_cmap("Set3").colors\
-			+ matplotlib.cm.get_cmap("Set2").colors
-		# + matplotlib.cm.get_cmap("Accent").colors[:-1]
-		# + matplotlib.cm.get_cmap("Set3").colors\
-		# + matplotlib.cm.get_cmap("Set2").colors\
-		# translate to color hex colors and remove identical colors
-		colors = util.drop_replicate(map(matplotlib.colors.to_hex, prelim))
+	def cluster_colors(self) -> util.CyclicIndexedList:
+		if self.opu_colors:
+			colors = self.opu_colors
+		else:
+			# get preliminary colors by internal colormaps
+			prelim = matplotlib.cm.get_cmap("Set3").colors\
+				+ matplotlib.cm.get_cmap("Set2").colors
+			# + matplotlib.cm.get_cmap("Accent").colors[:-1]
+			# + matplotlib.cm.get_cmap("Set3").colors\
+			# + matplotlib.cm.get_cmap("Set2").colors\
+			# translate to color hex colors and remove identical colors
+			colors = util.drop_replicate(map(matplotlib.colors.to_hex, prelim))
 		return util.CyclicIndexedList(colors)
 
 	def __parse_and_store_opu_min_size(self, raw_value=None):
@@ -428,7 +436,7 @@ class AnalysisHCARoutine(AnalysisDatasetRoutine):
 
 	def __plot_hca_cluster_bar(self, ax):
 		remapped_hca_label = self.remapped_hca_label
-		color_list = self.clusters_colors
+		color_list = self.cluster_colors
 		for i, leaf in enumerate(self.dendrogram["leaves"]):
 			label = remapped_hca_label[leaf]
 			facecolor = "#ffffff" if label is None else color_list[label]

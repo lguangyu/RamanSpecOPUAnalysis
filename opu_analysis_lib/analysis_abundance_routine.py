@@ -87,7 +87,7 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 		figure.set_dpi(dpi)
 
 		# plot stackbars
-		color_list = self.clusters_colors
+		color_list = self.cluster_colors
 		handles = list()
 		bottom = numpy.zeros(n_biosample, dtype=float)
 		x = numpy.arange(n_biosample) + 0.5  # center of each bar
