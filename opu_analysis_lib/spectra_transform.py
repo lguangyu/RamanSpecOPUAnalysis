@@ -68,7 +68,7 @@ class SpecFromLabspecTxt(object):
 	def iter_file_by_ext(cls, path, ext, *, recursive=False) -> iter:
 		for i in os.scandir(path):
 			if i.is_dir() and recursive:
-				yield from iter_file_by_ext(i, ext, recursive=recursive)
+				yield from cls.iter_file_by_ext(i, ext, recursive=recursive)
 			elif i.is_file() and os.path.splitext(i.path)[1] == ext:
 				yield i.path
 		return
