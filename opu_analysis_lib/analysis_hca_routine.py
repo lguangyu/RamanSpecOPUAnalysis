@@ -215,11 +215,11 @@ class AnalysisHCARoutine(AnalysisDatasetRoutine):
 			colors = self.opu_colors
 		else:
 			# get preliminary colors by internal colormaps
-			prelim = matplotlib.cm.get_cmap("Set3").colors\
-				+ matplotlib.cm.get_cmap("Set2").colors
-			# + matplotlib.cm.get_cmap("Accent").colors[:-1]
-			# + matplotlib.cm.get_cmap("Set3").colors\
-			# + matplotlib.cm.get_cmap("Set2").colors\
+			prelim = future.get_mpl_cmap("Set3").colors \
+				+ future.get_mpl_cmap("Set2").colors
+			# + future.get_mpl_cmap("Accent").colors[:-1]
+			# + future.get_mpl_cmap("Set3").colors\
+			# + future.get_mpl_cmap("Set2").colors\
 			# translate to color hex colors and remove identical colors
 			colors = util.drop_replicate(map(matplotlib.colors.to_hex, prelim))
 		return util.CyclicIndexedList(colors)

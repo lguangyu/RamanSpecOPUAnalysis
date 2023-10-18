@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+# this module includes all compatibility wrappers
 
 import collections
 import inspect
 
+import matplotlib.cm
+import matplotlib.colors
 import sklearn.cluster
 
 
@@ -24,3 +27,13 @@ else:
 		def total(self):
 			return sum(self.values())
 
+
+def get_mpl_cmap(name: str) -> matplotlib.colors.Colormap:
+	# wrapped matplotlib colormap query
+	if hasattr(matplotlib, "colormaps"):
+		# this seems to be available with matplotlib>=3.5
+		# got deprecation warning with version 3.8
+		ret = matplotlib.colormaps[name]
+	else:
+		ret = matplotlib.cm.get_cmap(name)
+	return ret
