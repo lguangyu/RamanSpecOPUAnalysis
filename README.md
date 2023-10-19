@@ -9,10 +9,11 @@ This library requires `python>=3.6`; below packages are also required:
 
 * numpy, scipy, scikit-learn
 * matplotlib
-* skfeature-chappers [1]
+* skfeature [1]
 
-[1]: the original repo contains a bug in laplacian score; please use this
-(https://github.com/lguangyu/scikit-feature.git) with my fixing commit instead.
+[1]: the original repo contains a bug in laplacian score; in the installation
+below the actual package used (skfeature-gli) can be found at
+(https://github.com/lguangyu/scikit-feature.git)
 
 
 # Installation
@@ -20,19 +21,8 @@ This library requires `python>=3.6`; below packages are also required:
 The installation is as easy as a single-line command:
 
 ```
-pip install "opu-analysis-lib @ git+https://github.com/lguangyu/RamanSpecOPUAnalysis.git"
+pip install raman-opu-analysis
 ```
-
-which will handle dependencies all together.
-
-Alternatively, in case no reinstalltion of the dependencies is wanted, run following instead:
-
-```
-pip install --no-deps "opu-analysis-lib @ git+https://github.com/lguangyu/RamanSpecOPUAnalysis.git"
-```
-
-this will be helpful in future updates after the first installation.
-
 
 # Synopsis and Basic Command-line Usage
 

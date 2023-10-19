@@ -2,7 +2,6 @@
 
 __version__ = "1.2.4"
 
-
 # utility
 from . import util
 from . import future

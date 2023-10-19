@@ -1,0 +1,3 @@
+[pycodestyle]
+ignore = E1,W191
+max-line-length = 80
