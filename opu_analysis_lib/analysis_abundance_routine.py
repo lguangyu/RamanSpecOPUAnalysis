@@ -69,7 +69,7 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 			print(delimiter.join(["", "shannon (OPUs)", "shannon (with minor)"]
 				), file=fp)
 			# each line for a biosample
-			for s, i, j in zip(self.biosample, si_n_minor, si_w_minor):
+			for s, i, j in zip(self.biosample_unique, si_n_minor, si_w_minor):
 				print(delimiter.join([s, str(i), str(j)]), file=fp)
 		return
 
