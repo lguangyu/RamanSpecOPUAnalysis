@@ -13,6 +13,22 @@ class SpectraDataset(object):
 	"""
 	I/O class for spectra dataset, with additional preprocessing features like
 	binning, wavenumber range filtering and normalization
+
+	ARGUMENTS
+	=========
+	wavenum: 1-d vector of float, the wavenumbers of the spectra; parsed as the
+		header line when using SpectraDataset.from_file()
+	intens: 2-d vector of float, the intensity matrix of the spectra
+	spectra_names: None, str, or list[str];
+		None: using numerical ids
+		str: using numerical ids with <str> as prefix
+		list[str]: using these as spectra ids
+	NOTE: shape of intens must be len(spectra_name) * len(wavenum) if
+		spectra_names is list[str]
+
+	name: str, dataset name or "unknown_dataset" by default
+	wavenum_low: float; deduced from wavenum by default (None)
+	wavenum_high: float; deduced from wavenum by default (None)
 	"""
 	norm_meth = registry.get("normalize")
 
@@ -51,6 +67,13 @@ class SpectraDataset(object):
 			raise ValueError("spectra_name and intens have unmatched size")
 		if wavenum.shape[0] != intens.shape[1]:
 			raise ValueError("wavenum and intens have unmatched size")
+		# check for spectra name collision
+		if (len(spectra_names) != len(set(spectra_names))):
+			raise ValueError("it look like some spectra have name collision; "
+				"make sure that distinct spectra names are used "
+				"(if spectra_names are manually assigned or parsed from table) "
+				"or distinct biosample/file names are used (if auto-generated)"
+			)
 		# if all ok set object attributes
 		self.spectra_names = spectra_names
 		self.wavenum = wavenum
@@ -96,7 +119,7 @@ class SpectraDataset(object):
 		else:
 			wavenum = raw[0, 0:].astype(float)
 			intens = raw[1:, 0:].astype(float)
-			spectra_names = os.path.basename(f)
+			spectra_names = name + "_" + os.path.basename(f)
 		# determine if spectra_names will be overridden
 		if isinstance(with_spectra_names, list):
 			spectra_names = with_spectra_names
@@ -213,7 +236,7 @@ class SpectraDataset(object):
 			name=name or "concatenated spctra dataset",
 			wavenum_low=min([i.wavenum_low for i in ka]),
 			wavenum_high=max([i.wavenum_high for i in ka]),
-            )
+		)
 		return new
 
 	@property
