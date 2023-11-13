@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import typing
 
 import numpy
@@ -95,7 +96,7 @@ class SpectraDataset(object):
 		else:
 			wavenum = raw[0, 0:].astype(float)
 			intens = raw[1:, 0:].astype(float)
-			spectra_names = None
+			spectra_names = os.path.basename(f)
 		# determine if spectra_names will be overridden
 		if isinstance(with_spectra_names, list):
 			spectra_names = with_spectra_names
