@@ -70,7 +70,7 @@ class SpectraDataset(object):
 		# check for spectra name collision
 		if (len(spectra_names) != len(set(spectra_names))):
 			raise ValueError("it look like some spectra have name collision; "
-				"make sure that distinct spectra names are used "
+				"make sure that distinct spectra names are used in each file"
 				"(if spectra_names are manually assigned or parsed from table) "
 				"or distinct biosample/file names are used (if auto-generated)"
 			)
@@ -82,6 +82,20 @@ class SpectraDataset(object):
 		self.wavenum_low = wavenum_low or self.wavenum.min()
 		self.wavenum_high = wavenum_high or self.wavenum.max()
 		return
+
+	@property
+	def spectra_names_with_prefix(self) -> numpy.ndarray:
+		"""
+		return a list of spectra names prefixed by dataset name if available;
+		this can be used to resolve spectra name collision between different
+		dataset files; the identical list to self.spectra_names will be returned
+		 if dataset name is not available.
+		"""
+		ret = self.spectra_names
+		if self.name:
+			ret = numpy.asarray([self.name + "-" + i for i in ret],
+				dtype=object)
+		return ret
 
 	@classmethod
 	def from_file(cls, f: str, *, delimiter="\t", name=None,
@@ -138,7 +152,7 @@ class SpectraDataset(object):
 		if not str.isnumeric(raw[0, 0]):
 			return True
 		# True if the first column cannot be interpreted all as numebrs
-		if not all([str.isnumeric(i) for i in raw[1:, 0]]):	
+		if not all([str.isnumeric(i) for i in raw[1:, 0]]):
 			return True
 		return False
 
@@ -217,6 +231,25 @@ class SpectraDataset(object):
 		"""
 		return numpy.allclose(self.wavenum, other.wavenum)
 
+	@staticmethod
+	def _concatenate_spectra_names(*ka) -> numpy.ndarray:
+		# concatenate spectra_names from dataset in ka, try to avoid name
+		# collision if possible
+		ret = numpy.concatenate([i.spectra_names for i in ka])
+		if len(ret) == len(set(ret)):
+			return ret
+		# otherwise try resolving name collision by adding prefix
+		ret = numpy.concatenate([i.spectra_names_with_prefix for i in ka])
+		if len(ret) == len(set(ret)):
+			return ret
+		# raise an error here
+		raise ValueError("looks like there are name collisions after "
+			"concatenation, and this collision cannot be resolved by adding "
+			"the dataset name as a prefix; try setting unique 'name' field "
+			"for each concatenated dataset, or manually resolve the name "
+			"collision in each dataset")
+		return
+
 	@classmethod
 	def concatenate(cls, *ka, name=None):
 		"""
@@ -234,7 +267,7 @@ class SpectraDataset(object):
 					% (ref.name, i.name))
 		concat_intens = numpy.vstack([i.intens for i in ka])
 		new = cls(ref.wavenum.copy(), concat_intens,
-			spectra_names=numpy.concatenate([i.spectra_names for i in ka]),
+			spectra_names=cls._concatenate_spectra_names(*ka),
 			name=name or "concatenated spctra dataset",
 			wavenum_low=min([i.wavenum_low for i in ka]),
 			wavenum_high=max([i.wavenum_high for i in ka]),

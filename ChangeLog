@@ -4,6 +4,7 @@
 * fixed a bug testing if first column is spectra names.
 * added functionality to open matplotlib interactive window when run opu_spectra_preview script in overview mode; could be handy in quick inspections. this functionality works on overview mode only.
 * added --with-spectra-names be passed to opu_spectra_preview script.
+* added auto-resolving of spectra name collision during SpectraDataset.concatenate() by trying to add the spectra dataset name as prefix; will raise an error if there are still name collisions thereafter.
 
 2023-11-13:
 
