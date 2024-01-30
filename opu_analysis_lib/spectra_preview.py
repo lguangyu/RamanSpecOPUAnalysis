@@ -61,7 +61,10 @@ class SpecPreview(SpectraDataset):
 		ax.set_title(self.name)
 
 		# save fig and clean up
-		figure.savefig(png)
+		if png:
+			figure.savefig(png, dpi=dpi)
+		else:
+			matplotlib.pyplot.show()
 		matplotlib.pyplot.close()
 		return
 
@@ -92,6 +95,7 @@ class SpecPreview(SpectraDataset):
 		return
 
 	def plot_preview_spectra(self, prefix, *, dpi=300) -> None:
+		assert prefix
 		for i, n in enumerate(self.spectra_names):
 			png = "%s.%04u.png" % (prefix, i)
 			title = "%s/%s" % (self.name, n)
@@ -116,15 +120,22 @@ class SpecPreview(SpectraDataset):
 		ap.add_argument("--delimiter", "-d", type=str, default="\t",
 			metavar="char",
 			help="delimiter in input [<tab>]")
+		ap.add_argument("--with-spectra-names", "-w", action="store_true",
+			default=None,  # none = autodetect
+			help="if set, the file will be forcefully parsed as fi the first "
+				"column represents spectra names; otherwise, the role of the "
+				"first be automatically detected")
 		ap.add_argument("--preview-mode", "-m", type=str, default="overview",
 			choices=["overview", "spectra"],
 			help="plot mode; in overview mode, all spectra will be on the same "
 				"figure, while in spectra mode, each spectra will have its own "
 				"figure [overview]")
-		ap.add_argument("--plot", "-p", type=str, required=True,
+		ap.add_argument("--plot", "-p", type=str,
 			metavar="png",
-			help="the output plot image file (in overview mode) or the output "
-				"path prefix (in spectra mode) (required)")
+			help="in spectra mode: the output image file, can be omitted to "
+				"open matploblib's interactive window instead; "
+				"spectra mode: required, and will be used as the prefix for "
+				"generated files")
 		ap.add_argument("--dpi", type=util.PosInt, default=300,
 			metavar="int",
 			help="dpi in plot outputs [300]")
@@ -155,6 +166,8 @@ class SpecPreview(SpectraDataset):
 		# this is require to make compatibility using os.path.splitext()
 		if args.input == "-":
 			args.input = sys.stdin
+		if (args.preview_mode == "spectra") and (not args.plot):
+			raise ValueError("--plot/-p is requried in spectra mode")
 		return args
 
 	@classmethod
@@ -185,6 +198,7 @@ class SpecPreview(SpectraDataset):
 	def cli_main(cls, argv_override=None):
 		args = cls.cli_get_args(argv_override=argv_override)
 		pv = cls.from_file(args.input, name=args.dataset_name,
+			with_spectra_names=args.with_spectra_names,
 			delimiter=args.delimiter, bin_size=args.bin_size,
 			wavenum_low=args.wavenum_low, wavenum_high=args.wavenum_high,
 			normalize=args.normalize)

@@ -93,7 +93,7 @@ class SpectraDataset(object):
 		information; the spectra names are optionl, but they must be available
 		in the first column if used
 
-		with_sepctra_names: can be None, False, True, or a list of str, behaviour
+		with_spectra_names: can be None, False, True, or a list of str, behaviour
 			depends:
 			False: force not parsing the first column as spectra names, and will
 				fill out spectra_names attribute by deducing from dataset name
@@ -133,12 +133,14 @@ class SpectraDataset(object):
 
 	@classmethod
 	def _test_if_have_spectra_names(cls, raw: numpy.ndarray) -> bool:
-		try:
-			t = raw[1:, 0].astype(float)
-			ret = False
-		except ValueError:
-			ret = True
-		return ret
+		# True if the topleft cell cannot be interpreted as number
+		# otherwise, need to do more test
+		if not str.isnumeric(raw[0, 0]):
+			return True
+		# True if the first column cannot be interpreted all as numebrs
+		if not all([str.isnumeric(i) for i in raw[1:, 0]]):	
+			return True
+		return False
 
 	def save_file(self, f, *, delimiter="\t", with_spectra_names=False):
 		with util.get_fp(f, "w") as fp:
