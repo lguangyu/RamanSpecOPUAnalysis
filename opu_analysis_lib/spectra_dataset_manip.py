@@ -64,28 +64,39 @@ class SpecDatasetManipSubCmdConcate(SpecDatasetManip.SubCmd):
 	def add_subparser_args(cls, sp: cli_util.ArgumentParser):
 		# add help
 		sp.description = "modify dataset(s) by applying binning, normalization"\
-			", and band-based filtering; concatenate multiple datasets into "\
-			"one if mutliple input files are provided"
+			", and band-based filtering; can also be used to combine multiple "\
+			"datasets into one."
 
 		# add args
 		sp.add_argument("input", type=str, nargs="+",
 			help="input dataset(s) to manipulate")
 		sp.add_argument("--output-mode", "-m", type=str, default="concat",
 			choices={"concat", "inplace", "separate"},
-			help="output mode when processing multiple input files [concat]; "
-				"concat: concatenate outputs into one; the output files must "
-				"have compatible wavenumbers; inplace: modify input files "
-				"inplace, overwrites the input files with new data; separate: "
-				"write output files individually into a directory")
+			help="output mode to use when processing multiple input files "
+				"[concat]; "
+				# concat
+				"concat (expect to be accompanied with --output/-o): "
+				"concatenate all outputs into one, and all output files must "
+				"have compatible wavenumbers natively or be forcefully aligned "
+				"with a valid --bin-size/-b parameter; "
+				# inplace
+				"inplace (expect neither --output/-o or --output-dir/-O): "
+				"modify input files in-place, overwritting with new data; "
+				# separate
+				"separate: (expect to be accompanied with --output-dir/-O): "
+				"write output files individually into the target directory, "
+				"output files will try to replicate the file names of input")
 		mg = sp.add_mutually_exclusive_group()
 		mg.add_argument("--output", "-o", type=str, default=None,
 			metavar="tsv",
-			help="output dataset file used with '--output-mode=concat' "
-				"[<stdout>]")
+			help="a single output dataset file, expected when --output-mode/-m "
+				"is 'concat' [<stdout>]; this option cannot be used together "
+				"with --output-dir/-O")
 		mg.add_argument("--output-dir", "-O", type=str, default=None,
 			metavar="dir",
-			help="dir for output dataset files, must be set if "
-				"'--output-mode=separate'")
+			help="dir to save output dataset files, expected when "
+				"--output-mode/-m is 'separate'; this option cannot be used "
+				"together with --output/-o")
 
 		sp.add_argument_delimiter()
 		sp.add_argument_with_spectra_names()
@@ -99,8 +110,8 @@ class SpecDatasetManipSubCmdConcate(SpecDatasetManip.SubCmd):
 
 		if args.output_mode == "concat":
 			if args.output_dir:
-				raise ValueError("'--output-mode=concat' cannot be used with "
-					"--output-dir/-O")
+				raise ValueError("--output-dir/-O cannot be set when "
+					"--output-mode/-m is 'concat'")
 			elif not args.output:
 				# be mercy when --output is not set
 				args.output = sys.stdout
@@ -108,8 +119,8 @@ class SpecDatasetManipSubCmdConcate(SpecDatasetManip.SubCmd):
 
 		if args.output_mode == "inplace":
 			if args.output or args.output_dir:
-				raise ValueError("'--output-mode=inplace' mode does not accept "
-					"eithe --output/-o or --output-dir/-O")
+				raise ValueError("neither --output/-o or --output-dir/-O can "
+					"be set when --output-mode/-m is 'inplace'")
 			return
 
 		if args.output_mode == "separate":
@@ -117,7 +128,7 @@ class SpecDatasetManipSubCmdConcate(SpecDatasetManip.SubCmd):
 				args.output = sys.stdout  # be mercy when there is only one input
 			elif (len(args.input) > 1) and (not args.output_dir):
 				raise ValueError("--output-dir/-O must be set with multiple "
-					"input files when '--output-mode=separate'")
+					"input files when --output-mode/-m is 'separate'")
 			return
 
 		return
@@ -154,8 +165,8 @@ class SpecDatasetManipSubCmdConcate(SpecDatasetManip.SubCmd):
 				output = os.path.join(args.output_dir, os.path.basename(d.file))
 				if os.path.samefile(output, d.file):
 					raise IOError("source and output files cannot be the same "
-						"when '--output-mode=separate'; use mode 'inplace' if "
-						"you want to modify inputs in-place")
+						"when --output-mode/-m is 'separate'; use 'inplace' if "
+						"in-place changes are meant")
 				d.save_file(output, delimiter=args.delimiter,
 					with_spectra_names=True)
 		return
