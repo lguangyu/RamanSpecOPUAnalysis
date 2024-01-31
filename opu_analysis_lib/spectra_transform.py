@@ -4,14 +4,14 @@ import argparse
 import os
 import sys
 
-from . import util
+from . import cli_util
 from .spectra_dataset import SpectraDataset
 
 
 class SpecFromLabspecTxt(object):
 	@classmethod
 	def cli_get_args(cls, argv_override=None):
-		ap = argparse.ArgumentParser(description="discover LabSpec txt dumps in"
+		ap = cli_util.ArgumentParser(description="discover LabSpec txt dumps in"
 			" <datadir> and combine them into a single tabular format file. "
 			"LabSpec txt dump is in a 2-column tab-delimited tabular format. "
 			"Its first column is wavenumber and the second is intensity. The "
@@ -23,36 +23,18 @@ class SpecFromLabspecTxt(object):
 		)
 		ap.add_argument("datadir", type=str,
 			help="input directory to scan LabSpec txt dumps")
+		ap.add_argument("--output", "-o", type=str, default="-",
+			metavar="tsv",
+			help="output dataset file [<stdout>]")
 		ap.add_argument("--extension", "-x", type=str, default=".txt",
 			metavar="str",
 			help="the extension of target files process [.txt]")
 		ap.add_argument("--recursive", "-r", action="store_true",
 			help="also search subdirectories of <datadir> [no]")
-		ap.add_argument("--verbose", "-v", action="store_true",
-			help="increase verbosity [off]")
-		ap.add_argument("--delimiter", "-d", type=str, default="\t",
-			metavar="char",
-			help="delimiter in text-based input and output [<tab>]")
-		ap.add_argument("--output", "-o", type=str, default="-",
-			metavar="tsv",
-			help="output dataset file [<stdout>]")
+		ap.add_argument_delimiter()
+		ap.add_argument_verbose()
 
-		ag = ap.add_argument_group("binning and normalization")
-		ag.add_argument("--bin-size", "-b", type=util.PosFloat, default=None,
-			metavar="float",
-			help="bin size to reconcile wavenumbers in multiple datasets, if left "
-				"default, no binning will be performed [off]")
-		ag.add_argument("--wavenum-low", "-L", type=util.PosFloat,
-			default=400, metavar="float",
-			help="lower boundry of wavenumber of extract for analysis [400]")
-		ag.add_argument("--wavenum-high", "-H", type=util.PosFloat,
-			default=1800, metavar="float",
-			help="higher boundry of wavenumber of extract for analysis [1800]")
-		ag.add_argument("--normalize", "-N", type=str,
-			default=SpectraDataset.norm_meth.default_key,
-			choices=SpectraDataset.norm_meth.list_keys(),
-			help="normalize method after loading/binning/filtering dataset [%s]"
-				% SpectraDataset.norm_meth.default_key)
+		ap.add_argument_group_binning_and_normalization()
 
 		# parse and refine args
 		args = ap.parse_args()

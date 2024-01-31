@@ -7,7 +7,7 @@ import matplotlib.pyplot
 import mpllayout
 import numpy
 
-from . import util
+from . import cli_util
 from .spectra_dataset import SpectraDataset
 
 
@@ -114,51 +114,32 @@ class SpecPreview(SpectraDataset):
 
 	@classmethod
 	def cli_get_args(cls, argv_override=None):
-		ap = argparse.ArgumentParser()
+		ap = cli_util.ArgumentParser()
 		ap.add_argument("input", type=str, nargs="?", default="-",
 			help="input spectra dataset table")
-		ap.add_argument("--delimiter", "-d", type=str, default="\t",
-			metavar="char",
-			help="delimiter in input [<tab>]")
-		ap.add_argument("--with-spectra-names", "-w", action="store_true",
-			default=None,  # none = autodetect
-			help="if set, the file will be forcefully parsed as fi the first "
-				"column represents spectra names; otherwise, the role of the "
-				"first be automatically detected")
+		ap.add_argument_delimiter()
+		ap.add_argument_with_spectra_names()
+		ap.add_argument_verbose()
+
 		ap.add_argument("--preview-mode", "-m", type=str, default="overview",
 			choices=["overview", "spectra"],
 			help="plot mode; in overview mode, all spectra will be on the same "
 				"figure, while in spectra mode, each spectra will have its own "
 				"figure [overview]")
+		ap.add_argument("--dataset-name", "-n", type=str,
+			metavar="str",
+			help="specify a dataset name to show in figure(s)")
 		ap.add_argument("--plot", "-p", type=str,
 			metavar="png",
 			help="in spectra mode: the output image file, can be omitted to "
 				"open matploblib's interactive window instead; "
 				"spectra mode: required, and will be used as the prefix for "
 				"generated files")
-		ap.add_argument("--dpi", type=util.PosInt, default=300,
+		ap.add_argument("--dpi", type=cli_util.util.PosInt, default=300,
 			metavar="int",
 			help="dpi in plot outputs [300]")
 
-		ag = ap.add_argument_group("dataset reconcile and normalize")
-		ag.add_argument("--dataset-name", "-n", type=str,
-			metavar="str",
-			help="specify a dataset name to show in figure(s)")
-		ag.add_argument("--bin-size", "-b", type=util.PosFloat, default=None,
-			metavar="float",
-			help="bin size to reconcile wavenumbers in multiple datasets, if "
-				"left default, no binning will be performed [off]")
-		ag.add_argument("--wavenum-low", "-L", type=util.PosFloat,
-			default=400, metavar="float",
-			help="lower boundry of wavenumber of extract for analysis [400]")
-		ag.add_argument("--wavenum-high", "-H", type=util.PosFloat,
-			default=1800, metavar="float",
-			help="higher boundry of wavenumber of extract for analysis [1800]")
-		ag.add_argument("--normalize", "-N", type=str,
-			default=SpectraDataset.norm_meth.default_key,
-			choices=SpectraDataset.norm_meth.list_keys(),
-			help="normalize method after loading/binning/filtering dataset [%s]"
-				% SpectraDataset.norm_meth.default_key)
+		ap.add_argument_group_binning_and_normalization()
 
 		# parse and refine args
 		args = ap.parse_args()

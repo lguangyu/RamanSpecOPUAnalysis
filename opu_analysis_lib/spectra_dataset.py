@@ -32,9 +32,10 @@ class SpectraDataset(object):
 	"""
 	norm_meth = registry.get("normalize")
 
-	def __init__(self, wavenum, intens, *ka, spectra_names=None, name=None,
-			wavenum_low=None, wavenum_high=None, **kw):
+	def __init__(self, wavenum, intens, *ka, file=None, spectra_names=None,
+			name=None, wavenum_low=None, wavenum_high=None, **kw):
 		super().__init__(*ka, **kw)
+		self.file = file
 		self.name = name
 		self.set_data(wavenum, intens, spectra_names=spectra_names,
 			wavenum_low=wavenum_low, wavenum_high=wavenum_high)
@@ -138,7 +139,7 @@ class SpectraDataset(object):
 		if isinstance(with_spectra_names, list):
 			spectra_names = with_spectra_names
 		# create return dataset object
-		new = cls(wavenum=wavenum, intens=intens, name=name or f,
+		new = cls(wavenum=wavenum, intens=intens, file=f, name=name or f,
 			spectra_names=spectra_names)
 		new.bin_and_filter_wavenum(bin_size=bin_size, wavenum_low=wavenum_low,
 			wavenum_high=wavenum_high, inplace=True)
@@ -229,7 +230,8 @@ class SpectraDataset(object):
 		"""
 		return true if two SpectraDataset's have compatible wavenumber ranges
 		"""
-		return numpy.allclose(self.wavenum, other.wavenum)
+		return (len(self.wavenum) == len(other.wavenum)) and\
+			numpy.allclose(self.wavenum, other.wavenum)
 
 	@staticmethod
 	def _concatenate_spectra_names(*ka) -> numpy.ndarray:
@@ -255,6 +257,9 @@ class SpectraDataset(object):
 		"""
 		concatenate multiple SpectraDataset objects as one
 		if any two datasets have incompatible wavenum, ValueError will be raised
+
+		will always return a new instance of SpectraDataset even if only one
+		dataset presents in the input
 		"""
 		if not ka:
 			raise ValueError("at least one dataset is requried")

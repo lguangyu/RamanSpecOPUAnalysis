@@ -1,0 +1,2 @@
+merge spectra_transform and spectra_preview into spectra_dataset_manip
+implement verbose option

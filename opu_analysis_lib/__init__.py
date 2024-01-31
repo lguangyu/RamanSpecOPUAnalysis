@@ -25,5 +25,6 @@ from .analysis_feature_score_routine import AnalysisFeatureScoreRoutine
 
 # wrapper class
 from .opu_analysis import OPUAnalysis
+from .spectra_dataset_manip import SpecDatasetManip
 from .spectra_transform import SpecFromLabspecTxt
 from .spectra_preview import SpecPreview

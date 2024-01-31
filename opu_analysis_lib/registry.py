@@ -59,6 +59,15 @@ class Registry(dict):
 	def list_keys(self):
 		return sorted(self.keys())
 
-	def get(self, key, *ka, **kw):
-		cls = self[key]
-		return cls(*ka, **kw)
+	def get(self, key, *ka, instantiate=True, **kw):
+		"""
+		query the registry and return an object associated with 'key'
+		if instantiate == True, return an instance of the registered class
+			initialized with arguments *ka and **kw
+		if instantiate == False, return the registered class instead of an
+			instance, and ignores *ka and **kw
+		"""
+		c = self[key]
+		if not instantiate:
+			return c
+		return c(*ka, **kw)
