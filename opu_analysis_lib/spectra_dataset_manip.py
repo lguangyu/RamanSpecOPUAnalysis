@@ -258,3 +258,153 @@ class SpecDatasetManipSubCmdFromLabspec(SpecDatasetManip.SubCmd):
 		dataset.save_file(args.output, delimiter=args.delimiter,
 			with_spectra_names=True)
 		return
+
+
+@SpecDatasetManip.add_subcmd("preview")
+class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
+	@classmethod
+	def add_subparser_args(cls, sp: cli_util.ArgumentParser):
+		# add help
+		sp.description = ""
+
+		sp.add_argument("input", type=str, nargs="?", default="-",
+			help="input spectra dataset table")
+		sp.add_argument("--preview-mode", "-m", type=str, default="overview",
+			choices=["overview", "spectra"],
+			help="plot mode; in overview mode, all spectra will be on the same "
+				"figure, while in spectra mode, each spectra will have its own "
+				"figure [overview]")
+		sp.add_argument("--dataset-name", "-n", type=str,
+			metavar="str",
+			help="specify a dataset name to show in figure(s)")
+		ap.add_argument("--plot", "-p", type=str,
+			metavar="png",
+			help="in spectra mode: the output image file, can be omitted to "
+				"open matploblib's interactive window instead; "
+				"spectra mode: required, and will be used as the prefix for "
+				"generated files")
+		ap.add_argument("--dpi", type=cli_util.util.PosInt, default=300,
+			metavar="int",
+			help="dpi in plot outputs [300]")
+		sp.add_argument_delimiter()
+		sp.add_argument_with_spectra_names()
+		sp.add_argument_verbose()
+
+		sp.add_argument_group_binning_and_normalization()
+		return
+
+	def create_layout(self) -> dict:
+		lc = mpllayout.LayoutCreator(
+			left_margin=0.7,
+			right_margin=0.2,
+			top_margin=0.5,
+			bottom_margin=0.7,
+		)
+
+		ax = lc.add_frame("spec")
+		ax.set_anchor("bottomleft")
+		ax.set_size(5.0, 1.0)
+
+		# create layout
+		layout = lc.create_figure_layout()
+
+		# apply axes style
+		ax = layout["spec"]
+		for sp in ax.spines.values():
+			sp.set_visible(False)
+		ax.set_facecolor("#f0f0f8")
+
+		return layout
+
+	def _plot_preview_overview(self, d: SpectraDataset) -> None:
+		# create figure layout
+		layout = self.create_layout()
+		figure = layout["figure"]
+		figure.set_dpi(self.args.dpi)
+
+		# plot each spectra, lumped together
+		ax = layout["spec"]
+		wavenum = d.wavenum
+		alpha = numpy.sqrt(1.0 / d.n_spectra)
+		for label, intens in zip(d.spectra_names, d.intens):
+			ax.plot(wavenum, intens, linestyle="-", linewidth=0.5,
+				color="#4040ff", alpha=alpha, zorder=2)
+		# add mean line
+		ax.plot(wavenum, d.intens.mean(axis=0), linestyle="-", linewidth=0.5,
+			color="#000000", zorder=3, label="mean")
+		# add x axis line
+		ax.axhline(0, linestyle="-", linewidth=1.0, color="#c0c0c0", zorder=1)
+
+		# misc
+		ax.set_xlim(d.wavenum_low, d.wavenum_high)
+		ax.set_xlabel("Wavenumber (cm$^{-1}$)")
+		ax.set_ylabel("Intensity (AU)")
+		ax.set_title(d.name)
+
+		# save fig and clean up
+		if png:
+			figure.savefig(self.args.plot)
+		else:
+			matplotlib.pyplot.show()
+		matplotlib.pyplot.close()
+		return
+
+	def _plot_spectrum(self, png: str, d: SpectraDataset, index: int, *,
+			title=None) -> None:
+		# create figure layout
+		layout = self.create_layout()
+		figure = layout["figure"]
+		figure.set_dpi(self.args.dpi)
+
+		# plot each spectra, lumped together
+		ax = layout["spec"]
+		wavenum = d.wavenum
+		intens = d.intens[index]
+		ax.plot(d.wavenum, d.intens[index], linestyle="-", linewidth=1.0,
+			color="#4040ff", zorder=2)
+		# add x axis line
+		ax.axhline(0, linestyle="-", linewidth=1.0, color="#c0c0c0", zorder=1)
+
+		# misc
+		ax.set_xlim(d.wavenum_low, d.wavenum_high)
+		ax.set_xlabel("Wavenumber (cm$^{-1}$)")
+		ax.set_ylabel("Intensity (AU)")
+		ax.set_title(title)
+
+		# save fig and clean up
+		figure.savefig(png)
+		matplotlib.pyplot.close()
+		return
+
+	def plot_preview_spectra(self, d: SpectraDataset) -> None:
+		prefix = self.args.plot
+		for i, n in enumerate(d.spectra_names_with_prefix):
+			self._plot_spectrum("%s%04u.png" % (prefix, i), index=i, title=n)
+		return
+
+	def plot_preview(self, d: SpectraDataset) -> None:
+		args = self.args
+		if args.preview_mode == "overview":
+			self.plot_preview_overview(d)
+		elif args.preview_mode == "spectra":
+			self.plot_preview_spectra(d)
+		else:
+			raise ValueError("mode can only be 'overview' or 'spectra', "
+				"not '%s'" % mode)
+		return
+
+	def run(self):
+		args = self.args
+		# refine args
+		if args.input == "-":
+			args.input = sys.stdin
+		if (args.preview_mode == "spectra") and (not args.plot):
+			raise ValueError("--plot/-p is requried in spectra mode")
+
+		dataset = SpectraDataset.from_file(args.input, name=args.dataset_name,
+			with_spectra_names=args.with_spectra_names,
+			delimiter=args.delimiter, bin_size=args.bin_size,
+			wavenum_low=args.wavenum_low, wavenum_high=args.wavenum_high,
+			normalize=args.normalize)
+		pv.plot_preview(dataset)
+		return
