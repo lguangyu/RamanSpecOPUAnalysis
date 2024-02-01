@@ -2,6 +2,7 @@
 
 * added opu_dataset_manip script
 * fixed bug in wavenum compatibility testing with different array lengths
+* merged opu_transform_labspec into opu_dataset_manip
 
 2024-01-30:
 

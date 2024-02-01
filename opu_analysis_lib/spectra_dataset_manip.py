@@ -5,6 +5,7 @@ import argparse
 import os
 import shutil
 import sys
+import tempfile
 
 from . import registry
 from . import cli_util
@@ -41,7 +42,8 @@ class SpecDatasetManip(object):
 			"manipulate spectra dataset(s)")
 
 		# add sub-command parsers
-		sp = ap.add_subparsers(dest="command", help="run sub-command",
+		sp = ap.add_subparsers(dest="command", help="run 'command --help' for "
+			"help information about each command",
 			parser_class=cli_util.ArgumentParser)
 		for k in cls.__subcmd.list_keys():
 			p = sp.add_parser(k)
@@ -145,12 +147,13 @@ class SpecDatasetManipSubCmdConcate(SpecDatasetManip.SubCmd):
 	def _save_results_inplace(self, datasets):
 		# this assumes that self.args is sanitized by the self._sanitize_args()
 		# and this function should not be called directly
-		# TODO: change to tempdir solution
 		args = self.args
-		for d in datasets:
-			tmp = d.file + os.path.extsep + "tmp"
-			d.save_file(tmp, delimiter=args.delimiter, with_spectra_names=True)
-			shutil.move(tmp, d.file)
+		with tempfile.TemporaryDirectory() as td:
+			for d in datasets:
+				tmp = os.path.join(td, os.path.basename(d.file))
+				d.save_file(tmp, delimiter=args.delimiter,
+					with_spectra_names=True)
+				shutil.copy(tmp, d.file)
 		return
 
 	def _save_results_separate(self, datasets):
@@ -194,4 +197,64 @@ class SpecDatasetManipSubCmdConcate(SpecDatasetManip.SubCmd):
 			self._save_results_separate(datasets)
 		else:
 			raise ValueError("unaccepted output mode: %s" % args.output_mode)
+		return
+
+
+@SpecDatasetManip.add_subcmd("from_labspec")
+class SpecDatasetManipSubCmdFromLabspec(SpecDatasetManip.SubCmd):
+	@classmethod
+	def add_subparser_args(cls, sp: cli_util.ArgumentParser):
+		# add help
+		sp.description = "discover LabSpec txt dumps in <datadir> and combine "\
+			"them into a single tabular format file. Format of the LabSpec txt"\
+			" dump is 2-column tab-delimited table: 1st column is wavenumber "\
+			"and 2nd column is intensity. The format after transformation is a"\
+			" single-piece tabular format: 1st row is wavenumber, and the rest"\
+			" are intensities. NOTE: LabSpec txt dumps from different "\
+			"runs/settings can have different wavenumbers, in which case the "\
+			"--bin-size/-b option is required to align the wavenumbers."
+		sp.add_argument("datadir", type=str,
+			help="input directory to scan for LabSpec txt dumps")
+		sp.add_argument("--extension", "-x", type=str, default=".txt",
+			metavar="str",
+			help="the extension of target files process [.txt]")
+		sp.add_argument("--recursive", "-r", action="store_true",
+			help="also search subdirectories of <datadir> [no]")
+		sp.add_argument("--output", "-o", type=str, default="-",
+			metavar="tsv",
+			help="output dataset file [<stdout>]")
+		sp.add_argument_delimiter()
+		sp.add_argument_verbose()
+
+		sp.add_argument_group_binning_and_normalization()
+		return
+
+	@classmethod
+	def _iter_file_by_ext(cls, path, ext, *, recursive=False) -> iter:
+		for i in os.scandir(path):
+			if i.is_dir() and recursive:
+				yield from cls._iter_file_by_ext(i, ext, recursive=recursive)
+			elif i.is_file() and os.path.splitext(i.path)[1] == ext:
+				yield i.path
+		return
+
+	def run(self):
+		args = self.args
+		# refine args
+		if args.output == "-":
+			args.output = sys.stdout
+
+		# run sub-command
+		# read files in directory
+		file_iter = self._iter_file_by_ext(args.datadir, args.extension,
+			recursive=args.recursive)
+		spectra = [SpectraDataset.from_labspec_txt_dump(i,
+			delimiter=args.delimiter, spectrum_name=os.path.basename(i),
+			bin_size=args.bin_size, wavenum_low=args.wavenum_low,
+			wavenum_high=args.wavenum_high)
+			for i in file_iter]
+		# concatenate into a single dataset
+		dataset = SpectraDataset.concatenate(*spectra)
+		dataset.save_file(args.output, delimiter=args.delimiter,
+			with_spectra_names=True)
 		return

@@ -15,15 +15,15 @@ class ArgumentParser(argparse.ArgumentParser):
 	def add_argument_delimiter(self):
 		self.add_argument("--delimiter", "-d", type=str, default="\t",
 			metavar="char",
-			help="delimiter in text-based input and output [<tab>]")
+			help="delimiter used in text-based input(s) and output(s) [<tab>]")
 		return
 
 	def add_argument_with_spectra_names(self):
 		self.add_argument("--with-spectra-names", "-w", action="store_true",
 			default=None,  # none = autodetect
-			help="if set, the file will be forcefully parsed as fi the first "
-				"column represents spectra names; otherwise, the role of the "
-				"first be automatically detected")
+			help="if set, the 1st column in each input file will considered as "
+				"spectra names no matter its content; if not set (default), the"
+				" role of the 1st column will be detected automatically")
 		return
 
 	def add_argument_group_binning_and_normalization(self):
