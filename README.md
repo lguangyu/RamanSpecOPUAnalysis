@@ -136,7 +136,7 @@ To convert multiple spectra into a single file, first organize them under a same
 directory (e.g. `inputdir`), and run following:
 
 ```bash
-opu_transform_labspec_txt \
+opu_dataset_manip from_labspec \
 	-x txt -b 5 -L 400 -H 1800 -N l2 \
 	-o output.data.tsv \
 	inputdir

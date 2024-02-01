@@ -21,9 +21,9 @@ class ArgumentParser(argparse.ArgumentParser):
 	def add_argument_with_spectra_names(self):
 		self.add_argument("--with-spectra-names", "-w", action="store_true",
 			default=None,  # none = autodetect
-			help="if set, the 1st column in each input file will considered as "
-				"spectra names no matter its content; if not set (default), the"
-				" role of the 1st column will be detected automatically")
+			help="if set, the 1st column in each input file will be considered "
+				"as spectra names no matter its content; if not set (default), "
+				"the role of the 1st column will be detected automatically")
 		return
 
 	def add_argument_group_binning_and_normalization(self):

@@ -7,6 +7,10 @@ import shutil
 import sys
 import tempfile
 
+import numpy
+import matplotlib
+import mpllayout
+
 from . import registry
 from . import cli_util
 from .spectra_dataset import SpectraDataset
@@ -43,7 +47,7 @@ class SpecDatasetManip(object):
 
 		# add sub-command parsers
 		sp = ap.add_subparsers(dest="command", help="run 'command --help' for "
-			"help information about each command",
+			"details",
 			parser_class=cli_util.ArgumentParser)
 		for k in cls.__subcmd.list_keys():
 			p = sp.add_parser(k)
@@ -265,10 +269,10 @@ class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
 	@classmethod
 	def add_subparser_args(cls, sp: cli_util.ArgumentParser):
 		# add help
-		sp.description = ""
+		sp.description = "preview the dataset for visual inspection"
 
 		sp.add_argument("input", type=str, nargs="?", default="-",
-			help="input spectra dataset table")
+			help="input dataset to visualize")
 		sp.add_argument("--preview-mode", "-m", type=str, default="overview",
 			choices=["overview", "spectra"],
 			help="plot mode; in overview mode, all spectra will be on the same "
@@ -277,13 +281,13 @@ class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
 		sp.add_argument("--dataset-name", "-n", type=str,
 			metavar="str",
 			help="specify a dataset name to show in figure(s)")
-		ap.add_argument("--plot", "-p", type=str,
-			metavar="png",
+		sp.add_argument("--plot", "--prefix", "-p", type=str,
+			metavar="file/prefix",
 			help="in spectra mode: the output image file, can be omitted to "
 				"open matploblib's interactive window instead; "
 				"spectra mode: required, and will be used as the prefix for "
 				"generated files")
-		ap.add_argument("--dpi", type=cli_util.util.PosInt, default=300,
+		sp.add_argument("--dpi", type=cli_util.util.PosInt, default=300,
 			metavar="int",
 			help="dpi in plot outputs [300]")
 		sp.add_argument_delimiter()
@@ -317,6 +321,7 @@ class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
 		return layout
 
 	def _plot_preview_overview(self, d: SpectraDataset) -> None:
+		args = self.args
 		# create figure layout
 		layout = self.create_layout()
 		figure = layout["figure"]
@@ -342,8 +347,8 @@ class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
 		ax.set_title(d.name)
 
 		# save fig and clean up
-		if png:
-			figure.savefig(self.args.plot)
+		if args.plot:
+			figure.savefig(args.plot)
 		else:
 			matplotlib.pyplot.show()
 		matplotlib.pyplot.close()
@@ -376,18 +381,18 @@ class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
 		matplotlib.pyplot.close()
 		return
 
-	def plot_preview_spectra(self, d: SpectraDataset) -> None:
+	def _plot_preview_spectra(self, d: SpectraDataset) -> None:
 		prefix = self.args.plot
 		for i, n in enumerate(d.spectra_names_with_prefix):
-			self._plot_spectrum("%s%04u.png" % (prefix, i), index=i, title=n)
+			self._plot_spectrum("%s%04u.png" % (prefix, i), d, i, title=n)
 		return
 
 	def plot_preview(self, d: SpectraDataset) -> None:
 		args = self.args
 		if args.preview_mode == "overview":
-			self.plot_preview_overview(d)
+			self._plot_preview_overview(d)
 		elif args.preview_mode == "spectra":
-			self.plot_preview_spectra(d)
+			self._plot_preview_spectra(d)
 		else:
 			raise ValueError("mode can only be 'overview' or 'spectra', "
 				"not '%s'" % mode)
@@ -399,12 +404,12 @@ class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
 		if args.input == "-":
 			args.input = sys.stdin
 		if (args.preview_mode == "spectra") and (not args.plot):
-			raise ValueError("--plot/-p is requried in spectra mode")
+			raise ValueError("--prefix/-p is requried in spectra mode")
 
 		dataset = SpectraDataset.from_file(args.input, name=args.dataset_name,
 			with_spectra_names=args.with_spectra_names,
 			delimiter=args.delimiter, bin_size=args.bin_size,
 			wavenum_low=args.wavenum_low, wavenum_high=args.wavenum_high,
 			normalize=args.normalize)
-		pv.plot_preview(dataset)
+		self.plot_preview(dataset)
 		return
