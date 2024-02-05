@@ -204,6 +204,132 @@ class SpecDatasetManipSubCmdConcate(SpecDatasetManip.SubCmd):
 		return
 
 
+@SpecDatasetManip.add_subcmd("head")
+class SpecDatasetManipSubCmdHead(SpecDatasetManip.SubCmd):
+	@classmethod
+	def add_subparser_args(cls, sp: cli_util.ArgumentParser):
+		# add help
+		sp.description = "extract the first <n> spectra in a dataset"
+
+		sp.add_argument("input", type=str, nargs="?", default="-",
+			help="input dataset extract [stdin]")
+		sp.add_argument("--output", "-o", type=str, default="-",
+			metavar="tsv",
+			help="output dataset [stdout]")
+		sp.add_argument("--n-spectra", "-n", type=str, default="10",
+			metavar="[-]int",
+			help="extract the first <int> spectra from the dataset; with the "
+				"leading '-', extract all but the last <int> ones [10]")
+		sp.add_argument_delimiter()
+		sp.add_argument_with_spectra_names()
+		sp.add_argument_verbose()
+		return
+
+	def run(self):
+		args = self.args
+		# refine args
+		if args.input == "-":
+			args.input = sys.stdin
+		if args.output == "-":
+			args.output = sys.stdout
+		# parse n_spectra
+		if args.n_spectra.isdigit():
+			rev = False
+			n_spectra = int(args.n_spectra)
+		elif args.n_spectra.startswith("-") and args.n_spectra[1:].isdigit():
+			rev = True
+			n_spectra = int(args.n_spectra[1:])
+		else:
+			raise TypeError("bad --n-spectra/-n format: %s" % args.n_spectra)
+		assert n_spectra >= 0
+
+		# extract
+		dataset = SpectraDataset.from_file(args.input, delimiter=args.delimiter,
+			with_spectra_names=args.with_spectra_names, wavenum_low=0,
+			wavenum_high=numpy.inf, normalize="none")
+		if not rev:
+			# 0 => [:0] => extract nothing
+			# 1 => [:1] => extract first one
+			# n => [:n] => extract all (first n) spectra
+			# bignum => [:bignum] => extract everything
+			query = slice(None, n_spectra)
+		elif n_spectra == 0:
+			# 0 => [:-0] (revise to => [:]/don't touch) => extract everything
+			query = slice(None)
+		else:
+			# 1 => [:-1] => extract all but last 1
+			# n => [:-n] => extract nothing
+			# bignum => [:-bignum] => extract nothing
+			query = slice(None, -n_spectra)
+		extract = dataset.get_sub_dataset(query)
+		extract.save_file(args.output, delimiter=args.delimiter,
+			with_spectra_names=True)
+		return
+
+
+@SpecDatasetManip.add_subcmd("tail")
+class SpecDatasetManipSubCmdTail(SpecDatasetManip.SubCmd):
+	@classmethod
+	def add_subparser_args(cls, sp: cli_util.ArgumentParser):
+		# add help
+		sp.description = "extract the last <n> spectra in a dataset"
+
+		sp.add_argument("input", type=str, nargs="?", default="-",
+			help="input dataset extract [stdin]")
+		sp.add_argument("--output", "-o", type=str, default="-",
+			metavar="tsv",
+			help="output dataset [stdout]")
+		sp.add_argument("--n-spectra", "-n", type=str, default="10",
+			metavar="[+]int",
+			help="extract the last <int> spectra from the dataset; with the "
+				"leading '+', extract from line number <int> [10]")
+		sp.add_argument_delimiter()
+		sp.add_argument_with_spectra_names()
+		sp.add_argument_verbose()
+		return
+
+	def run(self):
+		args = self.args
+		# refine args
+		if args.input == "-":
+			args.input = sys.stdin
+		if args.output == "-":
+			args.output = sys.stdout
+		# parse n_spectra
+		if args.n_spectra.isdigit():
+			rev = False
+			n_spectra = int(args.n_spectra)
+		elif args.n_spectra.startswith("+") and args.n_spectra[1:].isdigit():
+			rev = True
+			n_spectra = int(args.n_spectra[1:])
+		else:
+			raise TypeError("bad --n-spectra/-n format: %s" % args.n_spectra)
+		assert n_spectra >= 0
+
+		# extract
+		dataset = SpectraDataset.from_file(args.input, delimiter=args.delimiter,
+			with_spectra_names=args.with_spectra_names, wavenum_low=0,
+			wavenum_high=numpy.inf, normalize="none")
+		if rev:
+			# 0 => [0:] => extract everything
+			# 1 => [0:] => extract everything
+			# n => [n-1:] => extract all but first n-1
+			# bignum => [bignum-1:] => extract nothing
+			query = slice(max(n_spectra - 1, 0), None)
+		elif n_spectra == 0:
+			# 0 => [n:] => extract nothing
+			query = slice(dataset.n_spectra, None)
+		else:
+			# 1 => [-1:] => extract last one
+			# n => [-n:] => extract all (last n) spectra
+			# bignum => [-bignum:] => extract everything
+			query = slice(-n_spectra, None)
+		extract = dataset.get_sub_dataset(query)
+		extract.save_file(args.output, delimiter=args.delimiter,
+			with_spectra_names=True)
+		return
+
+
 @SpecDatasetManip.add_subcmd("from_labspec")
 class SpecDatasetManipSubCmdFromLabspec(SpecDatasetManip.SubCmd):
 	@classmethod

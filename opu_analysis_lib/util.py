@@ -7,6 +7,15 @@ import sys
 import typing
 
 
+def str_is_real(s: str):
+	try:
+		float(s)
+		return True
+	except ValueError:
+		return False
+	return
+
+
 class PosInt(int):
 	def __new__(cls, *ka, **kw):
 		new = super().__new__(cls, *ka, **kw)

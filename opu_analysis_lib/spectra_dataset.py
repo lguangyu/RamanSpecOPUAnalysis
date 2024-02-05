@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+import collections
+import numbers
 import os
-import typing
+import warnings
 
 import numpy
 
@@ -41,21 +43,31 @@ class SpectraDataset(object):
 			wavenum_low=wavenum_low, wavenum_high=wavenum_high)
 		return
 
+	@property
+	def is_empty(self) -> bool:
+		return bool(self.n_spectra)
+
 	def set_data(self, wavenum, intens, spectra_names=None, *,
 			wavenum_low=None, wavenum_high=None):
 		wavenum = numpy.asarray(wavenum, dtype=float)
 		intens = numpy.asarray(intens, dtype=float)
 		# deduce spectra_names if scalar values are used
 		if spectra_names is None:
-			# if spectra names are not specified, deduce from dataset name
-			prefix = self.name or "unnamed_dataset"
-			spectra_names = [(prefix + "_%06u") % (i + 1)
-				for i in range(len(intens))]
+			# if spectra names are not specified, use simple numberical label
+			# prefix = self.name or "unnamed_dataset"
+			spectra_names = ["%08u" % (i + 1) for i in range(len(intens))]
+			# spectra_names = [(prefix + "_%08u") % (i + 1)
+			# for i in range(len(intens))]
 		elif isinstance(spectra_names, str):
 			# use the spectra_names as prefix if it's str
 			prefix = spectra_names
-			spectra_names = [(prefix + "_%06u") % (i + 1)
+			spectra_names = [(prefix + "_%08u") % (i + 1)
 				for i in range(len(intens))]
+		elif not isinstance(spectra_names, collections.abc.Iterable):
+			raise TypeError("spectra_names must be None, str, or an iterable "
+				"object, not %s" % type(spectra_names).__name__)
+		# else, keep the same, assuming spectra names
+		# spectra_names = spectra_names
 		spectra_names = numpy.asarray(spectra_names, dtype=object)
 		# check shapes are correct and compatible
 		if spectra_names.ndim != 1:
@@ -70,11 +82,13 @@ class SpectraDataset(object):
 			raise ValueError("wavenum and intens have unmatched size")
 		# check for spectra name collision
 		if (len(spectra_names) != len(set(spectra_names))):
-			raise ValueError("it look like some spectra have name collision; "
-				"make sure that distinct spectra names are used in each file"
-				"(if spectra_names are manually assigned or parsed from table) "
-				"or distinct biosample/file names are used (if auto-generated)"
-			)
+			raise ValueError("looks like there are spectra name collisions "
+				"which is probably provided as a list/iterator as the value of "
+				"with_spectra_names argument; name collisions must be resolved "
+				"to proceed")
+		# issue warning if dataset is empty
+		if not len(intens):
+			warnings.warn("empty dataset (has zero spectrum)")
 		# if all ok set object attributes
 		self.spectra_names = spectra_names
 		self.wavenum = wavenum
@@ -119,25 +133,19 @@ class SpectraDataset(object):
 				must be the same as number of samples;
 		"""
 		raw = numpy.loadtxt(f, delimiter=delimiter, dtype=object)
-		# parse wavenum and intens from file
-		if ((with_spectra_names is None) or isinstance(with_spectra_names,
-				list)):
-			# here we only need to determine if the first column looks like
-			# spectral data, since parsing it as names (str) will always succeed
-			_parse_names = cls._test_if_have_spectra_names(raw)
-		else:
-			_parse_names = with_spectra_names
-		if _parse_names:
+		if ((with_spectra_names is None) and cls._1st_col_looks_names(raw) or
+			(with_spectra_names is True)):
+			# we only need to parse names from file under these two conditions
+			# parse the table except 1st column as data
 			wavenum = raw[0, 1:].astype(float)
 			intens = raw[1:, 1:].astype(float)
 			spectra_names = raw[1:, 0]
 		else:
+			# use value of with_spectra_names as hit to spectra_names
+			# and parse the whole table as data
 			wavenum = raw[0, 0:].astype(float)
 			intens = raw[1:, 0:].astype(float)
-			spectra_names = name + "_" + os.path.basename(f)
-		# determine if spectra_names will be overridden
-		if isinstance(with_spectra_names, list):
-			spectra_names = with_spectra_names
+			spectra_names = with_spectra_names  # None, str, list are all safe
 		# create return dataset object
 		new = cls(wavenum=wavenum, intens=intens, file=f, name=name or f,
 			spectra_names=spectra_names)
@@ -146,14 +154,14 @@ class SpectraDataset(object):
 		new.normalize(normalize, inplace=True)
 		return new
 
-	@classmethod
-	def _test_if_have_spectra_names(cls, raw: numpy.ndarray) -> bool:
+	@staticmethod
+	def _1st_col_looks_names(raw: numpy.ndarray) -> bool:
 		# True if the topleft cell cannot be interpreted as number
 		# otherwise, need to do more test
-		if not str.isnumeric(raw[0, 0]):
+		if not util.str_is_real(raw[0, 0]):
 			return True
 		# True if the first column cannot be interpreted all as numebrs
-		if not all([str.isnumeric(i) for i in raw[1:, 0]]):
+		if not all([util.str_is_real(i) for i in raw[1:, 0]]):
 			return True
 		return False
 
@@ -287,12 +295,15 @@ class SpectraDataset(object):
 	def n_wavenum(self):
 		return len(self.wavenum)
 
-	def get_sub_dataset(self, indices: typing.Iterable):
-		# make sure that indices are array, not single index value
-		if not isinstance(indices, typing.Iterable):
-			indices = [indices]
-		intens = self.intens[indices, :]
-		spectra_names = self.spectra_names[indices]
+	def get_sub_dataset(self, query):
+		# query: anything that is compatible with numpy.ndarray.__getitem__
+		# e.g. a bool sequence, an int sequence, a slice, or an integer.
+		if isinstance(query, numbers.Integral):
+			# if it's integer, turn it into to be sequence-like
+			# i.e. indices = 1 => indicies = [1]
+			query = [query]
+		intens = self.intens[query, :]
+		spectra_names = self.spectra_names[query]
 		# the ret spectra dataset with subset data
 		ret = type(self)(self.wavenum.copy(), intens,
 			spectra_names=spectra_names, name=self.name)
