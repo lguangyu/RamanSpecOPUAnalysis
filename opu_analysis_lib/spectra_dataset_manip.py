@@ -65,7 +65,7 @@ class SpecDatasetManip(object):
 
 
 @SpecDatasetManip.add_subcmd("convert")
-class SpecDatasetManipSubCmdConcate(SpecDatasetManip.SubCmd):
+class SpecDatasetManipSubCmdConvert(SpecDatasetManip.SubCmd):
 	@classmethod
 	def add_subparser_args(cls, sp: cli_util.ArgumentParser):
 		# add help

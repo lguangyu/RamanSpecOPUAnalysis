@@ -2,6 +2,7 @@
 
 * added head/tail command to opu_dataset_manip
 * refined SpectraDataset.get_sub_dataset logic
+* fixed bug referencing old modules in top-level package
 
 2024-02-01:
 
