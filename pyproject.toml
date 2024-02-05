@@ -23,8 +23,8 @@ dynamic = ["version", "readme"]
 opu_analysis = "opu_analysis_lib:OPUAnalysis.cli_main"
 opu_dataset_manip = "opu_analysis_lib:SpecDatasetManip.cli_main"
 
-[tool.setuptools.packages.find]
-where = ["."]
+[tool.setuptools]
+packages = ["opu_analysis_lib"]
 
 [tool.setuptools.dynamic]
 version = { attr = "opu_analysis_lib.__version__" }
