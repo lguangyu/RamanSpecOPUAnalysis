@@ -1,3 +1,7 @@
+2024-02-07:
+
+* fixed bug dpi not correctly used by Figure.savefig; savefig() overwrites dpi settings to rcParam["figure.dpi"] when not used; however, when called figure.set_dpi() in prior then calling figure.savefig(..., dpi="figure") also fails, the latter one seems to be a matplotlib issue. See: https://github.com/matplotlib/matplotlib/issues/24644, https://github.com/matplotlib/matplotlib/issues/26252.
+
 2024-02-05:
 
 * added head/tail command to opu_dataset_manip

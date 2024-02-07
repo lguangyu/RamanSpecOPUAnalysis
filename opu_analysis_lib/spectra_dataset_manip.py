@@ -447,7 +447,6 @@ class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
 		return layout
 
 	def _plot_preview_overview(self, d: SpectraDataset) -> None:
-		args = self.args
 		# create figure layout
 		layout = self.create_layout()
 		figure = layout["figure"]
@@ -473,8 +472,8 @@ class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
 		ax.set_title(d.name)
 
 		# save fig and clean up
-		if args.plot:
-			figure.savefig(args.plot)
+		if self.args.plot:
+			figure.savefig(self.args.plot, dpi=self.args.dpi)
 		else:
 			matplotlib.pyplot.show()
 		matplotlib.pyplot.close()
@@ -503,7 +502,7 @@ class SpecDatasetManipSubCmdPreview(SpecDatasetManip.SubCmd):
 		ax.set_title(title)
 
 		# save fig and clean up
-		figure.savefig(png)
+		figure.savefig(png, dpi=self.args.dpi)
 		matplotlib.pyplot.close()
 		return
 
