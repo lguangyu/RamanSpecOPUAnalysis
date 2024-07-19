@@ -104,6 +104,8 @@ opu_analysis example.json \
 	--abund-alpha-diversity example.json.opu_alpha_diversity.tsv \
 	--abund-stackbar-plot example.json.opu_abund.png \
 	--abund-biplot example.json.opu_pca.png \
+	--abund-biplot-figsize 4 \
+	--abund-biplot-method pca \
 	--feature-rank-method fisher_score \
 	--feature-rank-table example.json.opu_feature_rank.tsv \
 	--feature-rank-plot example.json.opu_feature_rank.png

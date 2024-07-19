@@ -2,6 +2,7 @@
 
 import abc
 import functools
+import warnings
 
 import numpy
 import sklearn.base
@@ -107,9 +108,13 @@ class TSNE(DimRedVisualize, sklearn.manifold.TSNE):
 		return
 
 	def prefit_prepare(self, X, Y=None):
-		# adjust preplexity if it is too large
+		# adjust perplexity if it is too large
 		if self.perplexity >= X.shape[0]:
-			self.set_params(perplexity=X.shape[0] - 1)  # at least no error
+			new_value = X.shape[0] - 1  # at least no error
+			warnings.warn("perplexity is bound by number of samples, "
+				"reduced from %d to %d" % (self.perplexity, new_value))
+			self.perplexity = new_value
+		# adjust n_iter if X is too large
 		if X.shape[0] > 1000:
 			self.n_iter = 1000
 		return

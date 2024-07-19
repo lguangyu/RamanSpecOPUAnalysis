@@ -1,7 +1,9 @@
 2024-07-19:
 
+* bumped version to 1.2.7a1
 * added t-SNE to decomposition/visualization method
 * added an extra parameter method_params in calling plot_opu_abundance_biplot()
+* added figure size and perplexity argument to opu_analysis script
 * fixed some sample points landing outside of biplot figure
 * improved spectra name deducing when loading dataset from a list of files
 * fixed double plot when using Jupyter

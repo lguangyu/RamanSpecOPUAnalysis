@@ -100,9 +100,17 @@ class OPUAnalysis(AnalysisFeatureScoreRoutine, AnalysisAbundanceRoutine,
 		ag.add_argument("--abund-biplot", type=str,
 			metavar="png",
 			help="if set, plot abundance biplot to this image file [no]")
+		ag.add_argument("--abund-biplot-figsize", type=util.PosFloat,
+			metavar="float", default=4.0,
+			help="the width and height of biplot figure in inches [4.0]; "
+				"this figure is always square")
 		ag.add_argument("--abund-biplot-label-fontsize", type=util.PosInt,
 			metavar="int", default=8,
 			help="the font size of biplot labels [8]")
+		ag.add_argument("--abund-biplot-tsne-perplexity", type=util.PosInt,
+			metavar="int", default=10,
+			help="perplexity used by t-SNE, typical value 5-50 [5]; this "
+				"argument only works when set --abund-biplot-method=t-sne")
 
 		ag = ap.add_argument_group("feature score analysis")
 		ag.add_argument("--feature-rank-method", "-R", type=str,
@@ -156,9 +164,16 @@ class OPUAnalysis(AnalysisFeatureScoreRoutine, AnalysisAbundanceRoutine,
 			delimiter=args.delimiter)
 		opu_anal.plot_opu_abundance_stackbar(plot_to=args.abund_stackbar_plot,
 			dpi=args.dpi)
+		if args.abund_biplot_method == "t-sne":
+			method_params = dict(perplexity=args.abund_biplot_tsne_perplexity)
+		else:
+			method_params = None
 		opu_anal.plot_opu_abundance_biplot(plot_to=args.abund_biplot,
-			method=args.abund_biplot_method, dpi=args.dpi,
-			label_fontsize=args.abund_biplot_label_fontsize)
+			method=args.abund_biplot_method, method_params=method_params,
+			fig_width=args.abund_biplot_figsize,
+			fig_height=args.abund_biplot_figsize,
+			label_fontsize=args.abund_biplot_label_fontsize,
+			dpi=args.dpi)
 
 		# run feature ranking analysis and save results
 		opu_anal.rank_features(args.feature_rank_method)

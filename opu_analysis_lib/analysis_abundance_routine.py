@@ -133,7 +133,8 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 
 	@util.with_check_data_avail(check_data_attr="hca", dep_method="run_hca")
 	def plot_opu_abundance_biplot(self, *, method=biplot_meth_reg.default_key,
-			method_params=None, plot_to="show", label_fontsize=10, dpi=300):
+			method_params=None, plot_to="show", fig_width=4.0, fig_height=4.0,
+			label_fontsize=10, dpi=300):
 		if plot_to is None:
 			return
 		if self.n_biosample <= 1:
@@ -160,7 +161,7 @@ class AnalysisAbundanceRoutine(AnalysisHCARoutine):
 		biplot_meth(abund_mat, **method_params)
 
 		# create layout
-		layout = self.__biplot_create_layout(figsize=(4, 4))
+		layout = self.__biplot_create_layout(figsize=(fig_width, fig_height))
 		figure = layout["figure"]
 		figure.set_dpi(dpi)
 
