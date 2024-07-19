@@ -15,7 +15,16 @@ class DimRedVisualize(sklearn.base.TransformerMixin,
 		sklearn.base.BaseEstimator):
 	def __call__(self, X, Y=None, **kw) -> numpy.ndarray:
 		self.set_params(**kw)
+		self.prefit_prepare(X, Y)
 		self._trans_X = self.fit_transform(X, Y)
+		return
+
+	def prefit_prepare(self, X, Y=None) -> None:
+		"""
+		fill the logics for automatically prepare essential data and parameters
+		before calling fit() or fit_transform() methods; leave this empty if no
+		such actions are needed;
+		"""
 		return
 
 	@property
@@ -25,6 +34,10 @@ class DimRedVisualize(sklearn.base.TransformerMixin,
 
 	@property
 	@abc.abstractmethod
+	def has_feature_points_for_plot(self) -> bool:
+		pass
+
+	@property
 	def feature_points_for_plot(self) -> numpy.ndarray:
 		pass
 
@@ -60,6 +73,10 @@ class PCA(DimRedVisualize, sklearn.decomposition.PCA):
 		return self._trans_X[:, :2].T  # (x, y) for transformed x
 
 	@property
+	def has_feature_points_for_plot(self):
+		return True
+
+	@property
 	def feature_points_for_plot(self):
 		x_med_norm = numpy.median(numpy.linalg.norm(self._trans_X, ord=1,
 			axis=1))
@@ -80,3 +97,39 @@ class PCA(DimRedVisualize, sklearn.decomposition.PCA):
 	@property
 	def ylabel_str(self):
 		return "PC2 (%.1f%%)" % (self.explained_variance_ratio_[1] * 100)
+
+
+@_reg.register("t-sne")
+class TSNE(DimRedVisualize, sklearn.manifold.TSNE):
+	@functools.wraps(sklearn.manifold.TSNE.__init__)
+	def __init__(self, *, n_components=2, **kw):
+		super().__init__(n_components=n_components, **kw)
+		return
+
+	def prefit_prepare(self, X, Y=None):
+		# adjust preplexity if it is too large
+		if self.perplexity >= X.shape[0]:
+			self.set_params(perplexity=X.shape[0] - 1)  # at least no error
+		if X.shape[0] > 1000:
+			self.n_iter = 1000
+		return
+
+	@ property
+	def sample_points_for_plot(self):
+		return self._trans_X[:, :2].T  # (x, y) for transformed x
+
+	@ property
+	def has_feature_points_for_plot(self):
+		return False
+
+	@ property
+	def name_str(self):
+		return "t-SNE"
+
+	@ property
+	def xlabel_str(self):
+		return "t-SNE 1"
+
+	@ property
+	def ylabel_str(self):
+		return "t-SNE 2"

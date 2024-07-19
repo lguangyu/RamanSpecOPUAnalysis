@@ -111,7 +111,7 @@ class AnalysisFeatureScoreRoutine(AnalysisHCARoutine):
 			matplotlib.pyplot.show()
 			ret = None
 		elif plot_to == "jupyter":
-			ret = figure
+			ret = None
 		else:
 			figure.savefig(plot_to, dpi=dpi)
 			matplotlib.pyplot.close()

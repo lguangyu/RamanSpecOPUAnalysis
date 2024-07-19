@@ -3,6 +3,7 @@
 import functools
 import io
 import json
+import math
 import sys
 import typing
 
@@ -128,3 +129,10 @@ def log(msg: str, *, fp=sys.stderr) -> None:
 	"""
 	print(msg, file=fp)
 	return
+
+
+def calc_zero_filled_int_len(n: int) -> int:
+	"""
+	calculate the number of digits needed to represent n in zero-filled format
+	"""
+	return (1 if n == 0 else math.ceil(math.log10(n)))

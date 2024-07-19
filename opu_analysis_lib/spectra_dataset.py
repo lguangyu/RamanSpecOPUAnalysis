@@ -28,7 +28,7 @@ class SpectraDataset(object):
 	NOTE: shape of intens must be len(spectra_name) * len(wavenum) if
 		spectra_names is list[str]
 
-	name: str, dataset name or "unknown_dataset" by default
+	name: str, dataset name or "unnamed" by default
 	wavenum_low: float; deduced from wavenum by default (None)
 	wavenum_high: float; deduced from wavenum by default (None)
 	"""
@@ -38,7 +38,7 @@ class SpectraDataset(object):
 			name=None, wavenum_low=None, wavenum_high=None, **kw):
 		super().__init__(*ka, **kw)
 		self.file = file
-		self.name = name
+		self.name = ("unnamed" if name is None else name)
 		self.set_data(wavenum, intens, spectra_names=spectra_names,
 			wavenum_low=wavenum_low, wavenum_high=wavenum_high)
 		return
@@ -51,23 +51,20 @@ class SpectraDataset(object):
 			wavenum_low=None, wavenum_high=None):
 		wavenum = numpy.asarray(wavenum, dtype=float)
 		intens = numpy.asarray(intens, dtype=float)
+		fill_format = "%%0%uu" % util.calc_zero_filled_int_len(len(intens))
 		# deduce spectra_names if scalar values are used
 		if spectra_names is None:
 			# if spectra names are not specified, use simple numberical label
-			# prefix = self.name or "unnamed_dataset"
-			spectra_names = ["%08u" % (i + 1) for i in range(len(intens))]
-			# spectra_names = [(prefix + "_%08u") % (i + 1)
-			# for i in range(len(intens))]
+			spectra_names = [fill_format % (i + 1) for i in range(len(intens))]
 		elif isinstance(spectra_names, str):
 			# use the spectra_names as prefix if it's str
 			prefix = spectra_names
-			spectra_names = [(prefix + "_%08u") % (i + 1)
+			spectra_names = [(prefix + "_" + fill_format) % (i + 1)
 				for i in range(len(intens))]
 		elif not isinstance(spectra_names, collections.abc.Iterable):
 			raise TypeError("spectra_names must be None, str, or an iterable "
 				"object, not %s" % type(spectra_names).__name__)
-		# else, keep the same, assuming spectra names
-		# spectra_names = spectra_names
+		# else, keep the same, assuming spectra_names
 		spectra_names = numpy.asarray(spectra_names, dtype=object)
 		# check shapes are correct and compatible
 		if spectra_names.ndim != 1:
@@ -117,15 +114,15 @@ class SpectraDataset(object):
 			with_spectra_names=None, bin_size=None, wavenum_low=400.0,
 			wavenum_high=1800.0, normalize=norm_meth.default_key):
 		"""
-		read spectra dataset form text file in tabular format
-		the read table must have the first line as the wave number (wavnum)
+		read spectra dataset form text file in tabular format;
+		the read table must have the first row as the wave number (wavenum)
 		information; the spectra names are optionl, but they must be available
-		in the first column if used
+		in the first column if used;
 
 		with_spectra_names: can be None, False, True, or a list of str, behaviour
 			depends:
 			False: force not parsing the first column as spectra names, and will
-				fill out spectra_names attribute by deducing from dataset name
+				fill out spectra_names from the spectra's numerical order
 			True: force parsing the first column as spectra names
 			None: auto-detect if first column looks like spectra names
 			list[str]: if provided, this will override the spectra names despite
@@ -133,7 +130,7 @@ class SpectraDataset(object):
 				must be the same as number of samples;
 		"""
 		raw = numpy.loadtxt(f, delimiter=delimiter, dtype=object)
-		if ((with_spectra_names is None) and cls._1st_col_looks_names(raw) or
+		if (((with_spectra_names is None) and cls._1st_col_looks_names(raw)) or
 			(with_spectra_names is True)):
 			# we only need to parse names from file under these two conditions
 			# parse the table except 1st column as data
@@ -141,11 +138,14 @@ class SpectraDataset(object):
 			intens = raw[1:, 1:].astype(float)
 			spectra_names = raw[1:, 0]
 		else:
-			# use value of with_spectra_names as hit to spectra_names
-			# and parse the whole table as data
+			# in this case, parse the whole table as data
+			# use value of with_spectra_names as hint to spectra_names
 			wavenum = raw[0, 0:].astype(float)
 			intens = raw[1:, 0:].astype(float)
-			spectra_names = with_spectra_names  # None, str, list are all safe
+			if with_spectra_names is False:
+				spectra_names = None
+			else:
+				spectra_names = with_spectra_names  # str, list are all safe
 		# create return dataset object
 		new = cls(wavenum=wavenum, intens=intens, file=f, name=name or f,
 			spectra_names=spectra_names)
@@ -153,6 +153,46 @@ class SpectraDataset(object):
 			wavenum_high=wavenum_high, inplace=True)
 		new.normalize(normalize, inplace=True)
 		return new
+
+	@classmethod
+	def from_file_list(cls, l: list, *, delimiter="\t", name=None,
+			with_spectra_names=None, bin_size=None, wavenum_low=400.0,
+			wavenum_high=1800.0, normalize=norm_meth.default_key):
+		"""
+		read spectra dataset form a list of text files in tabular format;
+		the read tables must have the first row as the wave number (wavenum)
+		information; the spectra names are optionl, but they must be available
+		in the first column if used;
+
+		all keyword parameters will be forwarded to from_file() to parse every
+		single table meaning that the same parameter values set here will be
+		applied to parse all files in the provided list; in addition, most these
+		keyword parameters share the same definitions as from_file(),
+		except that:
+		  * with_spectra_names: can be None, False, True, but cannot be a list
+		  	of str;
+		"""
+		if not l:
+			raise ValueError("empty file list")
+		elif len(l) == 1:
+			# if only one file, call from_file directly
+			ret = cls.from_file(l[0], delimiter=delimiter, name=name,
+				with_spectra_names=with_spectra_names, bin_size=bin_size,
+				wavenum_low=wavenum_low, wavenum_high=wavenum_high,
+				normalize=normalize)
+		else:
+			# parse each file in the list
+			name = "unnamed" if name is None else name
+			fill_format = "%%0%uu" % util.calc_zero_filled_int_len(len(l))
+			dateset_list = list()
+			for i, f in enumerate(l):
+				dateset_list.append(cls.from_file(f, delimiter=delimiter,
+					name=name + (fill_format % (i + 1)),
+					with_spectra_names=with_spectra_names, bin_size=bin_size,
+					wavenum_low=wavenum_low, wavenum_high=wavenum_high,
+					normalize=normalize))
+			ret = cls.concatenate(*dateset_list, name=name)
+		return ret
 
 	@staticmethod
 	def _1st_col_looks_names(raw: numpy.ndarray) -> bool:
