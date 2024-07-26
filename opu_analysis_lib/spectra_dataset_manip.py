@@ -170,7 +170,7 @@ class SpecDatasetManipSubCmdConvert(SpecDatasetManip.SubCmd):
 		elif args.output_dir:
 			for d in datasets:
 				output = os.path.join(args.output_dir, os.path.basename(d.file))
-				if os.path.samefile(output, d.file):
+				if os.path.isfile(outfile) and os.path.samefile(output, d.file):
 					raise IOError("source and output files cannot be the same "
 						"when --output-mode/-m is 'separate'; use 'inplace' if "
 						"in-place changes are meant")

@@ -1,3 +1,7 @@
+2024-07-26:
+
+* fixed a bug in opu_dataset_manip script
+
 2024-07-19:
 
 * bumped version to 1.2.7a1
